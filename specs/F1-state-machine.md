@@ -14,7 +14,44 @@
 - `createRng()` with no seed uses `crypto.randomUUID()` / `Math.random()`.
 
 ## States & transitions (T-010)
-_TBD in T-010._
+
+States: `none`, `trial`, `active`, `cancelled_pending_expiration`, `billing_issue`, `expired`.
+
+```
+                INITIAL_PURCHASE (trial)            RENEWAL (conversion)
+  none ───────────────────────────────▶ trial ─────────────────────────▶ active ◀──┐
+   │      INITIAL_PURCHASE (no trial)     │                                 │  ▲    │ RENEWAL
+   └──────────────────────────────────────┼─────────────────────────────────┘  │    │
+                                          │ CANCELLATION / BILLING_ISSUE / EXPIRATION (same edges from active)
+                                          ▼
+   cancelled_pending_expiration ──UNCANCELLATION──▶ (back to trial|active)
+          │  EXPIRATION                          billing_issue ──RENEWAL──▶ active
+          ▼                                        │  EXPIRATION / CANCELLATION
+        expired ◀──────────────────────────────────┘
+          │  INITIAL_PURCHASE (resubscribe → active, no trial)
+          └──────────────────────────────▶ active
+```
+
+| From | Event | To |
+|------|-------|----|
+| none | INITIAL_PURCHASE | trial (product has trial) / active |
+| trial | RENEWAL | active (trial conversion) |
+| trial | CANCELLATION | cancelled_pending_expiration |
+| trial | BILLING_ISSUE | billing_issue |
+| trial | EXPIRATION | expired |
+| active | RENEWAL | active |
+| active | CANCELLATION | cancelled_pending_expiration |
+| active | BILLING_ISSUE | billing_issue |
+| active | EXPIRATION | expired |
+| cancelled_pending_expiration | UNCANCELLATION | state before cancellation (trial or active) |
+| cancelled_pending_expiration | EXPIRATION | expired |
+| billing_issue | RENEWAL | active (recovery) |
+| billing_issue | EXPIRATION | expired (churn) |
+| billing_issue | CANCELLATION | cancelled_pending_expiration |
+| expired | INITIAL_PURCHASE | active (resubscribe, no trial) |
+| any | TEST | unchanged |
+
+Anything else → `IllegalTransitionError` naming the current state, the attempted event and the legal events from that state. The transition function is pure: `transition(state, event, ctx) → nextState` with `ctx = { hasTrial, resumeState }`.
 
 ## Coherence rules (T-011)
 _TBD in T-011._

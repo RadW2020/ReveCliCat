@@ -46,3 +46,9 @@ Diary of work sessions. Newest at the bottom. Format: date · ticket · what was
 **What works:** a strict TS/ESM CLI skeleton (`rcc`/`purr`), quality gates wired, and — the important part — event schemas grounded in the live official docs with the official samples as fixtures. Also, out of order because they were unblocked: the virtual clock/RNG (T-012) and the scenario parser (T-030).
 **Debt:** `TEST` schema PROVISIONAL (T-004, needs a human with a dashboard). No smoke demo yet beyond `rcc --help` (no commands implemented).
 **Next:** Epic 1 — state machine (T-010) and the 8 coherence rules (T-011).
+
+## 2026-08-29 · T-010 · State machine: states and transitions
+- Spec: transition table + ASCII diagram added to `specs/F1-state-machine.md`.
+- Tests first (33): all 17 legal edges (incl. trial/no-trial INITIAL_PURCHASE, UNCANCELLATION resuming trial or active), 12 illegal edges, error contents, `legalEvents` table, and an exhaustive consistency check (`legalEvents` ⇔ `transition` for every state×event).
+- Impl: `src/core/state-machine.ts` — pure `transition(state, event, ctx)` over a declarative table, `legalEvents`, `IllegalTransitionError{state,event,legal}` whose message lists the legal events.
+- Gates: typecheck ✓ · lint ✓ · tests 84/84 ✓.

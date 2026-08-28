@@ -21,7 +21,7 @@ Legend: 🧊 Icebox · 📋 Backlog · 🔨 In progress · ✅ Done · ⛔ Block
 | T-002 | Research official RevenueCat webhook docs → `docs/payload-sources.md` | E0 | ✅ |
 | T-003 | Zod schemas for the 7 v0.1 event types + fixtures | E0 | ✅ |
 | T-004 | Validate PROVISIONAL `TEST` schema against a real dashboard event | E0 | ⛔ |
-| T-010 | State machine: states and transitions | E1 | 📋 |
+| T-010 | State machine: states and transitions | E1 | ✅ |
 | T-011 | The 8 coherence rules, one test each | E1 | 📋 |
 | T-012 | Virtual clock (ISO-8601 durations, `--seed`) | E1 | ✅ |
 | T-020 | `rcc send <EVENT_TYPE>` | E2 | 📋 |
@@ -280,6 +280,7 @@ _(none)_
 - T-001
 - T-002
 - T-003
+- T-010
 - T-012
 - T-030
 
