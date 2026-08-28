@@ -34,3 +34,15 @@ Diary of work sessions. Newest at the bottom. Format: date · ticket · what was
 - Key facts: Authorization is a static dashboard-configured header (no signature); new fields/types may appear without an `api_version` bump → schemas must be non-strict; Doubles may be serialised as ints.
 - `TEST` has no official sample → schema will be PROVISIONAL; opened **T-004** (blocked: needs a human with a dashboard account). Refined T-003 criteria accordingly (spec before code).
 - Tests: n/a (docs only); suite still 29/29.
+
+## 2026-08-29 · T-003 · Zod schemas for the 7 event types + fixtures
+- Fixtures: the 6 official samples copied byte-for-byte from the docs into `test/fixtures/events/` (+ the S2 envelope example). `TEST.json` constructed from documented field groups, marked PROVISIONAL in `test/fixtures/events/README.md`.
+- Tests first (22): every fixture parses via per-type schema, `EventSchema` union and `WebhookEnvelopeSchema`; passthrough of unknown keys; `api_version` newer string OK / number rejected; negative paths (`type`, `app_user_id`, `store`, `*_ms`, enums); event-specific rules (cancel_reason, expiration_reason incl. SUBSCRIPTION_PAUSED only on EXPIRATION, is_trial_conversion optional boolean, grace_period_expiration_at_ms required-nullable, `{}` subscriber_attributes, optional app_id, TEST tolerance).
+- Impl: `src/schemas/common.ts` (all enums from the docs), `src/schemas/events.ts` (`looseObject` bases: common / identity / lifecycle groups; per-type `extend`; discriminated union; envelope). Public API re-exported from `src/index.ts`.
+- ESLint: allow `_`-prefixed rest-sibling destructuring (`ignoreRestSiblings`).
+- Gates: typecheck ✓ · lint ✓ · tests 51/51 ✓.
+
+### Epic 0 summary — Foundations & fidelity
+**What works:** a strict TS/ESM CLI skeleton (`rcc`/`purr`), quality gates wired, and — the important part — event schemas grounded in the live official docs with the official samples as fixtures. Also, out of order because they were unblocked: the virtual clock/RNG (T-012) and the scenario parser (T-030).
+**Debt:** `TEST` schema PROVISIONAL (T-004, needs a human with a dashboard). No smoke demo yet beyond `rcc --help` (no commands implemented).
+**Next:** Epic 1 — state machine (T-010) and the 8 coherence rules (T-011).
