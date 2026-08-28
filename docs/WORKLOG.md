@@ -65,3 +65,10 @@ Diary of work sessions. Newest at the bottom. Format: date · ticket · what was
 **Smoke demo:** no CLI command yet exercises this (Epic 2 next), so the "real terminal" demo is deferred to the Epic 2 milestone; the unit sequence in `subscriber.test.ts` (`lifecycle()`) is the equivalent today.
 **Debt:** EXPIRATION is always time-guarded — refund-style early expirations (`CUSTOMER_SUPPORT`) are not modelled (Icebox candidate, noted below). `app_id` is synthetic.
 **Next:** Epic 2 — `rcc send` (T-020), `rcc listen` (T-021), smoke e2e (T-022).
+
+## 2026-08-29 · T-020 · `rcc send <EVENT_TYPE>`
+- Spec: `specs/F2-commands.md` (all commands' flags; the **prelude** table — `send RENEWAL` alone would be an illegal transition, so `send` runs the shortest legal history and posts only the requested event; unseeded clocks start in the past so the event lands ≈ now).
+- Tests first (12, in-process against a capture server; `test/helpers/server.ts`): envelope/headers, every type sendable alone, near-now timestamps, all flags incl. repeatable `--set` with dot paths, `--dry-run`, seed determinism, unknown type / bad env / bad store messages, invalid `--set`, connection refused, non-2xx → exit 1, `parseSetFlag` JSON-or-string.
+- Impl: `buildProgram(io)` now takes injectable stdout/stderr; `src/core/io.ts`, `src/core/http.ts` (`postEvent` via fetch, latency, `unreachableError`, `assertUrl`), `src/core/engine.ts` (`createSimulation`, `applyStep`, `spanOf`, `preludeFor` — reused by `run`), `src/commands/send.ts`.
+- Terminal check: `rcc send --help`, `rcc send RENEWAL --dry-run --seed 1`, unreachable target → actionable error, exit 1.
+- Gates: typecheck ✓ · lint ✓ · tests 112/112 ✓.

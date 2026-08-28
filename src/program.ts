@@ -4,8 +4,9 @@ import { registerSend } from "./commands/send.js";
 import { registerListen } from "./commands/listen.js";
 import { registerRun } from "./commands/run.js";
 import { registerInit } from "./commands/init.js";
+import { defaultIo, type Io } from "./core/io.js";
 
-export function buildProgram(): Command {
+export function buildProgram(io: Io = defaultIo): Command {
   const program = new Command();
   program
     .name("rcc")
@@ -15,11 +16,11 @@ export function buildProgram(): Command {
     )
     .version(pkg.version, "-v, --version", "print the version")
     .showHelpAfterError("(run with --help for usage)")
-    .configureOutput({ writeErr: (s) => process.stderr.write(s) });
+    .configureOutput({ writeOut: (s) => io.stdout.write(s), writeErr: (s) => io.stderr.write(s) });
 
-  registerSend(program);
-  registerListen(program);
-  registerRun(program);
-  registerInit(program);
+  registerSend(program, io);
+  registerListen(program, io);
+  registerRun(program, io);
+  registerInit(program, io);
   return program;
 }

@@ -1,7 +1,8 @@
 import type { Command } from "commander";
 import { RccError } from "../core/errors.js";
+import type { Io } from "../core/io.js";
 
-export function registerInit(program: Command): void {
+export function registerInit(program: Command, _io: Io): void {
   program
     .command("init")
     .description("(coming soon)")
