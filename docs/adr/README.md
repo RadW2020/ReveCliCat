@@ -4,3 +4,4 @@ Short ADRs: **Context · Decision · Consequences**. Numbered `ADR-NNN-slug.md`.
 
 | ADR | Title | Status |
 |-----|-------|--------|
+| [ADR-001](ADR-001-tooling-dependencies.md) | Tooling dev-dependencies beyond the core stack | Accepted |

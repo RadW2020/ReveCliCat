@@ -17,7 +17,7 @@ Legend: 🧊 Icebox · 📋 Backlog · 🔨 In progress · ✅ Done · ⛔ Block
 
 | ID | Title | Epic | Status |
 |----|-------|------|--------|
-| T-001 | Project scaffolding | E0 | 📋 |
+| T-001 | Project scaffolding | E0 | ✅ |
 | T-002 | Research official RevenueCat webhook docs → `docs/payload-sources.md` | E0 | 📋 |
 | T-003 | Zod schemas for the 7 v0.1 event types + fixtures | E0 | 📋 |
 | T-010 | State machine: states and transitions | E1 | 📋 |
@@ -266,7 +266,7 @@ _(none)_
 
 ## Done
 
-_(none yet)_
+- T-001
 
 ## Icebox
 
