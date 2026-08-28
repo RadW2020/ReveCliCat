@@ -78,3 +78,14 @@ Diary of work sessions. Newest at the bottom. Format: date · ticket · what was
 - Impl: `src/commands/listen.ts` — `node:http` server, `startListener()` returns `{url, port, close}`; SIGINT/SIGTERM close the server.
 - Terminal smoke: `rcc listen --port 8799 --auth-header "Bearer dev"` + `rcc send RENEWAL … --auth-header "Bearer dev"` → 200 / `rcc send TEST` without auth → `AUTH MISMATCH`, 401, send exit 1. Screens as designed.
 - Gates: typecheck ✓ · lint ✓ · tests 120/120 ✓.
+
+## 2026-08-29 · T-022 · Smoke e2e `send` → `listen`
+- `test/integration/send-listen.e2e.test.ts`: builds `dist/cli.js` (tsup) in `beforeAll`, spawns `rcc listen --port <free> --auth-header "Bearer dev"` and, in separate processes, `rcc send RENEWAL` (exit 0, both sides show 200/RENEWAL) and `rcc send CANCELLATION --auth-header "Bearer wrong"` (exit 1 with 401; listener prints `AUTH MISMATCH`). `NO_COLOR=1` for stable assertions.
+- Passed first run — the units had already exercised both sides; this pins the real process boundary.
+- Gates: typecheck ✓ · lint ✓ · tests 122/122 ✓ (2 integration).
+
+### Epic 2 summary — Basic commands
+**What works (real terminal):** `rcc listen` receives, validates against the official schemas, checks `Authorization`, forwards; `rcc send <TYPE>` posts any of the 7 events coherently (prelude), with overrides, dry-run and seeds. Errors are actionable (unreachable target, unknown type, bad flags, non-2xx).
+**Smoke demo:** `rcc listen --port 8799 --auth-header "Bearer dev"` ⟷ `rcc send RENEWAL … --auth-header "Bearer dev"` → 200; without auth → 401 / `AUTH MISMATCH` (see T-021 entry).
+**Debt:** `listen` keeps the process alive with a never-resolving promise (fine for a CLI, not for embedding — `startListener` is the embeddable API). No config-file defaults yet (T-051).
+**Next:** Epic 3 — scenario engine + `rcc run` (T-031; parser T-030 already done), example scenarios (T-032).
