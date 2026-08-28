@@ -1,0 +1,22 @@
+name: valid-scenario
+description: A fully specified scenario used by the parser tests
+subscriber:
+  app_user_id: auto
+  product_id: com.example.premium.monthly
+  period: P1M
+  trial: P1W
+  grace_period: P16D
+  store: app_store
+  environment: SANDBOX
+steps:
+  - event: INITIAL_PURCHASE
+    set:
+      price: 9.99
+      subscriber_attributes.plan.value: pro
+  - advance: P1W
+  - event: RENEWAL
+    expect:
+      response_status: 200
+expect:
+  all_responses_status: 200
+  max_response_ms: 500

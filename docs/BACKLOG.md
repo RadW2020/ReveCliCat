@@ -26,7 +26,7 @@ Legend: 🧊 Icebox · 📋 Backlog · 🔨 In progress · ✅ Done · ⛔ Block
 | T-020 | `rcc send <EVENT_TYPE>` | E2 | 📋 |
 | T-021 | `rcc listen` | E2 | 📋 |
 | T-022 | Smoke e2e: `send` → `listen` integration test | E2 | 📋 |
-| T-030 | Scenario YAML parser + schema | E3 | 📋 |
+| T-030 | Scenario YAML parser + schema | E3 | ✅ |
 | T-031 | Scenario engine + `rcc run` | E3 | 📋 |
 | T-032 | The 6 example scenarios | E3 | 📋 |
 | T-040 | CI mode: `expect:` blocks, exit codes, `--json` | E4 | 📋 |
@@ -268,6 +268,7 @@ _(none)_
 
 - T-001
 - T-012
+- T-030
 
 ## Icebox
 
