@@ -22,7 +22,7 @@ Legend: 🧊 Icebox · 📋 Backlog · 🔨 In progress · ✅ Done · ⛔ Block
 | T-003 | Zod schemas for the 7 v0.1 event types + fixtures | E0 | ✅ |
 | T-004 | Validate PROVISIONAL `TEST` schema against a real dashboard event | E0 | ⛔ |
 | T-010 | State machine: states and transitions | E1 | ✅ |
-| T-011 | The 8 coherence rules, one test each | E1 | 📋 |
+| T-011 | The 8 coherence rules, one test each | E1 | ✅ |
 | T-012 | Virtual clock (ISO-8601 durations, `--seed`) | E1 | ✅ |
 | T-020 | `rcc send <EVENT_TYPE>` | E2 | 📋 |
 | T-021 | `rcc listen` | E2 | 📋 |
@@ -117,10 +117,10 @@ The `Subscriber` simulation produces full event payloads; each coherence rule ha
 
 **Acceptance criteria** (one test per rule, named `rule N: ...`)
 - [ ] R1: all events in a sequence share `app_user_id`, `original_transaction_id`, `product_id`; each `RENEWAL` has a new `transaction_id` and the same `original_transaction_id`.
-- [ ] R2: `event_timestamp_ms` is monotonically non-decreasing across the sequence; `purchased_at_ms <= event_timestamp_ms`; `expiration_at_ms = purchased_at_ms + period` (or trial duration during trial).
+- [ ] R2: `event_timestamp_ms` is monotonically non-decreasing across the sequence; `purchased_at_ms < expiration_at_ms`; `expiration_at_ms = purchased_at_ms + period` (or trial duration during trial). (`purchased_at_ms` may exceed `event_timestamp_ms` on early App Store renewals, per official docs — not forbidden.)
 - [ ] R3: `period_type` is `TRIAL` while in trial, `NORMAL` after conversion.
 - [ ] R4: a `RENEWAL` sets `expiration_at_ms` to previous `expiration_at_ms + period` (exactly one period).
-- [ ] R5: `CANCELLATION` does not change `expiration_at_ms`; state becomes `cancelled_pending_expiration`; `EXPIRATION` is only legal once clock ≥ `expiration_at_ms` (otherwise a clear error).
+- [ ] R5: `CANCELLATION` does not change `expiration_at_ms`; state becomes `cancelled_pending_expiration`; `EXPIRATION` is only legal once clock ≥ `expiration_at_ms` (otherwise `PrematureEventError` telling how far to advance).
 - [ ] R6: `BILLING_ISSUE` sets `grace_period_expiration_at_ms = event_timestamp_ms + grace` (configurable, default `P16D`); from there `RENEWAL` recovers and `EXPIRATION` churns with `expiration_reason: BILLING_ERROR`.
 - [ ] R7: every event has a unique UUID `id`, and `environment`/`store` equal the configured values.
 - [ ] R8: an illegal transition throws before any payload is produced (the sequence length is unchanged after the failure).
@@ -281,6 +281,7 @@ _(none)_
 - T-002
 - T-003
 - T-010
+- T-011
 - T-012
 - T-030
 
@@ -293,4 +294,5 @@ Not for v0.1. Each line has its justification.
 - Web UI — CLI is the product; a UI would dilute focus.
 - Hosted mode — no infra in v0.1.
 - Real npm publish — release readiness is in scope, publishing is a human decision.
-- Cryptographic payload signing — RevenueCat uses a plain Authorization header; documented in README instead.
+- Cryptographic payload signing — RevenueCat uses a plain Authorization header; documented in README instead. (RevenueCat's opt-in HMAC header `X-RevenueCat-Webhook-Signature` could be a v0.2 flag.)
+- Refund / early-expiration flows (`CUSTOMER_SUPPORT`, `DEVELOPER_INITIATED`, `PRICE_INCREASE`) — v0.1 time-guards EXPIRATION; refunds need their own semantics (negative prices).

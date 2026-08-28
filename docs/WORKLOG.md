@@ -52,3 +52,16 @@ Diary of work sessions. Newest at the bottom. Format: date · ticket · what was
 - Tests first (33): all 17 legal edges (incl. trial/no-trial INITIAL_PURCHASE, UNCANCELLATION resuming trial or active), 12 illegal edges, error contents, `legalEvents` table, and an exhaustive consistency check (`legalEvents` ⇔ `transition` for every state×event).
 - Impl: `src/core/state-machine.ts` — pure `transition(state, event, ctx)` over a declarative table, `legalEvents`, `IllegalTransitionError{state,event,legal}` whose message lists the legal events.
 - Gates: typecheck ✓ · lint ✓ · tests 84/84 ✓.
+
+## 2026-08-29 · T-011 · The 8 coherence rules — `Subscriber`
+- Spec first: field-derivation table per event added to `specs/F1-state-machine.md`; R2 criterion refined per official docs (App Store may bill up to 24 h before the period start, so `purchased_at_ms` may exceed `event_timestamp_ms` on early renewals — not forbidden).
+- Tests first (16): one per rule (R1–R8, plus 3b/6b variants) over a trial→convert→renew→billing-issue→recover sequence, schema validity of every generated event, TEST from `none`, dot-path overrides + invalid override rejection, fixed vs auto `app_user_id` (`$RCAnonymousID:<32hex>`), seed determinism, resubscribe after expiry.
+- Impl: `src/core/subscriber.ts` (`Subscriber.emit(type, overrides)`: transition → time guard (`PrematureEventError` with the exact `advance:` to add) → draft period → payload → zod validate → commit), `src/core/set-path.ts` (`setPath`/`applyOverrides`).
+- Design note: non-purchase events carry `price: 0` (matches all official samples); renewals start at the previous `expiration_at_ms` (billing-period continuity, also during grace recovery).
+- Gates: typecheck ✓ · lint ✓ · tests 100/100 ✓.
+
+### Epic 1 summary — State machine
+**What works:** a pure transition table (`state-machine.ts`), a forward-only calendar-aware virtual clock with seeded RNG, and `Subscriber`, which turns event types into schema-valid, mutually coherent payloads. Same seed ⇒ byte-identical sequences.
+**Smoke demo:** no CLI command yet exercises this (Epic 2 next), so the "real terminal" demo is deferred to the Epic 2 milestone; the unit sequence in `subscriber.test.ts` (`lifecycle()`) is the equivalent today.
+**Debt:** EXPIRATION is always time-guarded — refund-style early expirations (`CUSTOMER_SUPPORT`) are not modelled (Icebox candidate, noted below). `app_id` is synthetic.
+**Next:** Epic 2 — `rcc send` (T-020), `rcc listen` (T-021), smoke e2e (T-022).
