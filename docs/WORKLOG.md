@@ -72,3 +72,9 @@ Diary of work sessions. Newest at the bottom. Format: date · ticket · what was
 - Impl: `buildProgram(io)` now takes injectable stdout/stderr; `src/core/io.ts`, `src/core/http.ts` (`postEvent` via fetch, latency, `unreachableError`, `assertUrl`), `src/core/engine.ts` (`createSimulation`, `applyStep`, `spanOf`, `preludeFor` — reused by `run`), `src/commands/send.ts`.
 - Terminal check: `rcc send --help`, `rcc send RENEWAL --dry-run --seed 1`, unreachable target → actionable error, exit 1.
 - Gates: typecheck ✓ · lint ✓ · tests 112/112 ✓.
+
+## 2026-08-29 · T-021 · `rcc listen`
+- Tests first (8, in-process via `startListener({port:0})`): URL banner + one-line log (time, type, app_user_id, product_id), `--verbose` full JSON, INVALID envelope/garbage → 400 with reasons (up to 3 zod paths), `--auth-header` mismatch → red `AUTH MISMATCH` + 401 / match → 200, `--forward` relays body + Authorization and the upstream status, unreachable upstream → 502 `forward failed`, non-POST → 404 JSON, port in use → actionable error.
+- Impl: `src/commands/listen.ts` — `node:http` server, `startListener()` returns `{url, port, close}`; SIGINT/SIGTERM close the server.
+- Terminal smoke: `rcc listen --port 8799 --auth-header "Bearer dev"` + `rcc send RENEWAL … --auth-header "Bearer dev"` → 200 / `rcc send TEST` without auth → `AUTH MISMATCH`, 401, send exit 1. Screens as designed.
+- Gates: typecheck ✓ · lint ✓ · tests 120/120 ✓.

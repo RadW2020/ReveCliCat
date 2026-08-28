@@ -25,7 +25,7 @@ Legend: 🧊 Icebox · 📋 Backlog · 🔨 In progress · ✅ Done · ⛔ Block
 | T-011 | The 8 coherence rules, one test each | E1 | ✅ |
 | T-012 | Virtual clock (ISO-8601 durations, `--seed`) | E1 | ✅ |
 | T-020 | `rcc send <EVENT_TYPE>` | E2 | ✅ |
-| T-021 | `rcc listen` | E2 | 📋 |
+| T-021 | `rcc listen` | E2 | ✅ |
 | T-022 | Smoke e2e: `send` → `listen` integration test | E2 | 📋 |
 | T-030 | Scenario YAML parser + schema | E3 | ✅ |
 | T-031 | Scenario engine + `rcc run` | E3 | 📋 |
@@ -283,6 +283,7 @@ _(none)_
 - T-010
 - T-011
 - T-020
+- T-021
 - T-012
 - T-030
 
