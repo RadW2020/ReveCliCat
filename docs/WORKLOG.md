@@ -27,3 +27,10 @@ Diary of work sessions. Newest at the bottom. Format: date · ticket · what was
 - Tests first (13): valid full/minimal scenarios with defaults, unknown keys, unknown event type (lists valid ones), bad durations, both/neither `event`/`advance`, empty steps, missing name, bad store/environment/period, bad expectations, YAML syntax errors, file path in message, missing file hint.
 - Impl: `src/core/scenario.ts` (`ScenarioSchema` zod strictObjects, `parseScenario`, `loadScenario`, `ScenarioValidationError{file,line,column,path}`; zod issue path → YAML node via `doc.getIn(path, true)` + `LineCounter`), `src/schemas/common.ts` (EVENT_TYPES, ENVIRONMENTS, CLI_STORES).
 - Gates: typecheck ✓ · lint ✓ · tests 29/29 ✓.
+
+## 2026-08-29 · T-002 · Official RevenueCat webhook docs research
+- Ran as a background research task while T-012/T-030 were built. All 4 official webhook pages (+ their canonical `.md` variants and `llms.txt`) fetched OK on 2026-08-29; only a dashboard screenshot 404'd.
+- Wrote `docs/payload-sources.md` (sources table, per-schema VERIFIED/PROVISIONAL status, envelope/auth/retry facts, inclusion semantics Always/Sometimes, field groups, enums, flow facts). Raw notes with verbatim quotes and the 6 official sample payloads kept in `docs/research/revenuecat-webhooks-2026-08-29.md`.
+- Key facts: Authorization is a static dashboard-configured header (no signature); new fields/types may appear without an `api_version` bump → schemas must be non-strict; Doubles may be serialised as ints.
+- `TEST` has no official sample → schema will be PROVISIONAL; opened **T-004** (blocked: needs a human with a dashboard account). Refined T-003 criteria accordingly (spec before code).
+- Tests: n/a (docs only); suite still 29/29.

@@ -18,8 +18,9 @@ Legend: 🧊 Icebox · 📋 Backlog · 🔨 In progress · ✅ Done · ⛔ Block
 | ID | Title | Epic | Status |
 |----|-------|------|--------|
 | T-001 | Project scaffolding | E0 | ✅ |
-| T-002 | Research official RevenueCat webhook docs → `docs/payload-sources.md` | E0 | 📋 |
+| T-002 | Research official RevenueCat webhook docs → `docs/payload-sources.md` | E0 | ✅ |
 | T-003 | Zod schemas for the 7 v0.1 event types + fixtures | E0 | 📋 |
+| T-004 | Validate PROVISIONAL `TEST` schema against a real dashboard event | E0 | ⛔ |
 | T-010 | State machine: states and transitions | E1 | 📋 |
 | T-011 | The 8 coherence rules, one test each | E1 | 📋 |
 | T-012 | Virtual clock (ISO-8601 durations, `--seed`) | E1 | ✅ |
@@ -64,17 +65,27 @@ Read the official docs starting at `https://www.revenuecat.com/docs/integrations
 - [ ] The envelope (`api_version`, `event`), the Authorization header semantics and the enumerations (`store`, `environment`, `period_type`, `cancel_reason`, `expiration_reason`) are documented with their source.
 - [ ] If any page was unreachable, the affected schemas are marked `PROVISIONAL` and a high-priority ticket `T-00X` is added to this backlog to validate them.
 
+### T-004 · Validate the PROVISIONAL `TEST` schema (high priority, needs a human)
+**Feature:** F1 (payloads). **Depends on:** T-003. **Blocked:** requires a RevenueCat dashboard account to issue a test event.
+
+The official docs describe `TEST` ("purchase-like sample payload", Common + Subscriber identity + Subscription lifecycle field groups) but publish no sample. Our schema is marked PROVISIONAL in `docs/payload-sources.md`.
+
+**Acceptance criteria**
+- [ ] A real `TEST` event captured with `rcc listen --verbose` is added to `test/fixtures/events/TEST.captured.json` (secrets redacted).
+- [ ] `TestEventSchema` tightened to the observed shape; `docs/payload-sources.md` row flipped to `VERIFIED` with capture date.
+
 ### T-003 · Zod schemas for the 7 event types + fixtures
 **Feature:** F1 (payloads). **Depends on:** T-002
 
 `zod` schemas for `TEST`, `INITIAL_PURCHASE`, `RENEWAL`, `CANCELLATION`, `UNCANCELLATION`, `BILLING_ISSUE`, `EXPIRATION` plus the webhook envelope, with example fixtures and validation tests.
 
 **Acceptance criteria**
-- [ ] `src/schemas/` exports one schema per event type, a discriminated union `EventSchema` on `type`, and `WebhookEnvelopeSchema` (`{ api_version: "1.0", event }`).
+- [ ] `src/schemas/` exports one schema per event type, a discriminated union `EventSchema` on `type`, and `WebhookEnvelopeSchema` (`{ api_version: string, event }`; we always emit `"1.0"`, but incoming validation must not hard-fail on a newer version — see payload-sources.md).
 - [ ] Field names and enumerations match `docs/payload-sources.md` exactly (no invented fields).
 - [ ] `test/fixtures/events/*.json` contains one valid fixture per event type; a test parses each against its schema and the union.
 - [ ] Negative tests: wrong `type`, missing required field (`app_user_id`), invalid `store` value, non-integer `*_ms` timestamp → each rejects with a zod error naming the path.
-- [ ] Event-specific fields are enforced: `CANCELLATION` requires `cancel_reason`; `EXPIRATION` requires `expiration_reason`; `RENEWAL` has `is_trial_conversion`; `BILLING_ISSUE` has `grace_period_expiration_at_ms` (nullable).
+- [ ] Event-specific fields are enforced: `CANCELLATION` requires `cancel_reason`; `EXPIRATION` requires `expiration_reason`; `RENEWAL` accepts `is_trial_conversion` (optional per docs; our generator always emits it); `BILLING_ISSUE` requires `grace_period_expiration_at_ms` (nullable).
+- [ ] Schemas are non-strict (unknown keys pass through) and `Always`/`Sometimes` inclusion semantics follow `docs/payload-sources.md`.
 - [ ] Type inference: `type Event = z.infer<typeof EventSchema>` is exported and used by the rest of the code.
 
 ---
@@ -267,6 +278,7 @@ _(none)_
 ## Done
 
 - T-001
+- T-002
 - T-012
 - T-030
 
