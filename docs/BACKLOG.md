@@ -22,7 +22,7 @@ Legend: 🧊 Icebox · 📋 Backlog · 🔨 In progress · ✅ Done · ⛔ Block
 | T-003 | Zod schemas for the 7 v0.1 event types + fixtures | E0 | 📋 |
 | T-010 | State machine: states and transitions | E1 | 📋 |
 | T-011 | The 8 coherence rules, one test each | E1 | 📋 |
-| T-012 | Virtual clock (ISO-8601 durations, `--seed`) | E1 | 📋 |
+| T-012 | Virtual clock (ISO-8601 durations, `--seed`) | E1 | ✅ |
 | T-020 | `rcc send <EVENT_TYPE>` | E2 | 📋 |
 | T-021 | `rcc listen` | E2 | 📋 |
 | T-022 | Smoke e2e: `send` → `listen` integration test | E2 | 📋 |
@@ -267,6 +267,7 @@ _(none)_
 ## Done
 
 - T-001
+- T-012
 
 ## Icebox
 
