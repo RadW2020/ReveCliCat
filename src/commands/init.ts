@@ -38,7 +38,7 @@ export function initProject(cwd: string, opts: InitOptions): string[] {
 export function registerInit(program: Command, io: Io): void {
   program
     .command("init")
-    .description(`Create ${CONFIG_FILE} and a scenarios/ folder with the six example scenarios in the current directory.`)
+    .description(`Create ${CONFIG_FILE} and a scenarios/ folder with the example scenarios in the current directory.`)
     .option("--force", "overwrite existing files")
     .addHelpText("after", `
 Examples:

@@ -6,3 +6,6 @@ coverage/
 !.env.example
 .DS_Store
 .vercel
+
+# local, not part of the product
+PROMO-TODO.md

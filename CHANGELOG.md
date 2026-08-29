@@ -4,6 +4,9 @@ All notable changes to this project are documented here. Format based on [Keep a
 
 ## [Unreleased]
 
+### Changed
+- README repositioned after market research (`docs/research/market-validation-2026-08-29.md`): tagline names the three modelled stores, the "Stripe CLI that RevenueCat does not have" line is replaced (RevenueCat published `@revenuecat/cli` on 2026-08-25; ReveCliCat is the `stripe trigger` + `stripe listen` half it lacks), a comparison table against the dashboard test event, store sandbox/Test Store and `rc`, and a fidelity section that leads with the real captured events. `rcc init` help no longer hard-codes the scenario count.
+
 ## [0.3.0] — 2026-08-29
 
 ### Added

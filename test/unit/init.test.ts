@@ -29,7 +29,7 @@ async function cli(args: string[]): Promise<{ out: string; err: string; error?: 
 }
 
 describe("T-051 rcc init", () => {
-  it("creates the config file and the six example scenarios, and suggests the next command", async () => {
+  it("creates the config file and the eight example scenarios, and suggests the next command", async () => {
     const { out, error } = await cli(["init"]);
     expect(error).toBeUndefined();
     const cfg = JSON.parse(readFileSync(join(dir, "reveclicat.config.json"), "utf8")) as Record<string, unknown>;

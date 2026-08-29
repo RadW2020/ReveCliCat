@@ -3,8 +3,8 @@
 exports[`T-052 --help > help for ["init"] is stable 1`] = `
 "Usage: rcc init [options]
 
-Create reveclicat.config.json and a scenarios/ folder with the six example
-scenarios in the current directory.
+Create reveclicat.config.json and a scenarios/ folder with the example scenarios
+in the current directory.
 
 Options:
   --force     overwrite existing files
@@ -123,7 +123,7 @@ Commands:
                                  coherent event sequence and deliver it over
                                  HTTP.
   init [options]                 Create reveclicat.config.json and a scenarios/
-                                 folder with the six example scenarios in the
+                                 folder with the example scenarios in the
                                  current directory.
   tail [options]                 Receive real RevenueCat webhooks on your
                                  machine through a relay, print them, and

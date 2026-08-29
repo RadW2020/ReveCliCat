@@ -4,9 +4,11 @@
 
 [![ci](https://github.com/RadW2020/ReveCliCat/actions/workflows/ci.yml/badge.svg)](https://github.com/RadW2020/ReveCliCat/actions/workflows/ci.yml) [![npm](https://img.shields.io/npm/v/reveclicat)](https://www.npmjs.com/package/reveclicat) [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
 
-**Deterministic time travel for subscriptions: simulate a year of a subscriber's life in 30 seconds, locally and in CI, without touching Apple's sandbox.**
+**Deterministic time travel for subscriptions: simulate a year of a subscriber's life in 30 seconds — App Store, Google Play or Stripe — locally and in CI, without waiting for a sandbox.**
 
-ReveCliCat is a small TypeScript CLI that generates RevenueCat-shaped webhook events, chains them through a subscription state machine so they stay coherent (same IDs, forward-moving timestamps, fields that mutate the way they really do), and POSTs them to your endpoint — `localhost` included, no tunnel needed. Think of it as the Stripe CLI that RevenueCat does not have.
+ReveCliCat is a small TypeScript CLI that generates RevenueCat-shaped webhook events, chains them through a subscription state machine so they stay coherent (same IDs, forward-moving timestamps, fields that mutate the way they really do), and POSTs them to your endpoint — `localhost` included, no tunnel needed. It also receives *real* RevenueCat webhooks on your machine (`rcc tail`).
+
+In Stripe terms: RevenueCat's official CLI ([`rc`](https://github.com/RevenueCat/cli), August 2026) is the part that manages your project from the terminal; ReveCliCat is the missing `stripe trigger` + `stripe listen` — fire any lifecycle event on demand, and forward the real ones to localhost.
 
 ![rcc run happy-year against rcc listen, then rcc send and rcc tail --smee](https://raw.githubusercontent.com/RadW2020/ReveCliCat/main/docs/demo.gif)
 
@@ -28,20 +30,33 @@ $ rcc run scenarios/billing-issue-recovers.yaml
 - **`rcc send <EVENT_TYPE>`** — fire one schema-valid event (`INITIAL_PURCHASE`, `RENEWAL`, `CANCELLATION`, `UNCANCELLATION`, `BILLING_ISSUE`, `EXPIRATION`, `TEST`) at any URL.
 - **`rcc run <scenario.yaml>`** — play a whole subscriber lifecycle from a YAML file on a **virtual clock** (`advance: P1M`), with per-event expectations and a CI-friendly exit code / `--json` output.
 - **`rcc listen`** — a local receiver that validates incoming events against the schemas and pretty-prints them (handy to see what your own server will get).
-- **`rcc init`** — drop a config file and six ready-made scenarios into your project.
+- **`rcc init`** — drop a config file and eight ready-made scenarios into your project (App Store, Google Play and Stripe flavours).
+- **`rcc tail`** / **`rcc inbox`** — receive the *real* webhooks RevenueCat sends (dashboard test event, sandbox purchases) on your laptop, through a relay or your own inbox.
 
-The binary is `rcc`; `purr` is an alias for the same binary. Payload schemas are derived from RevenueCat's official webhook documentation — every field and enum is traced in [`docs/payload-sources.md`](docs/payload-sources.md).
+The binary is `rcc`; `purr` is an alias for the same binary. Payload schemas are derived from RevenueCat's official webhook documentation and checked against real captured events — every field, enum and store-specific rule is traced in [`docs/payload-sources.md`](docs/payload-sources.md).
 
 ## Why it exists
 
-Testing RevenueCat webhooks today means either making real sandbox purchases (slow, flaky, tied to a device) or firing isolated events from the dashboard (no coherence between events). Neither lets you reproduce *"trial → charge fails → grace period → recovers → renews"* on your laptop, and neither fits in a CI pipeline.
+RevenueCat gives you two ways to test a webhook handler: make real sandbox purchases (or Test Store ones) and wait for the store's clock, or press "send test event" in the dashboard, which emits a single generic `TEST` payload. Developers have been asking for more since 2024 — *"something like stripe CLI tool"* — and RevenueCat's own answer, as of 2026, is still a tunnel: ngrok or localtunnel to a laptop. The official `rc` CLI (August 2026) manages webhook *configuration* and can simulate a Test Store *purchase*; it does not trigger a chosen event, chain a lifecycle or listen locally.
+
+What that means in practice, as of 2026-08-29:
+
+| You want to… | Dashboard test event | Store sandbox / Test Store | `rc` (official CLI) | ReveCliCat |
+|---|---|---|---|---|
+| Fire a *specific* event (`BILLING_ISSUE`, `EXPIRATION`, `CANCELLATION`…) at your handler | ✗ `TEST` only | only if the store cooperates | ✗ | ✓ `rcc send` |
+| Play a full lifecycle with coherent ids and timestamps | ✗ | slowly: 5 min – 1 h per renewal, renewals capped, events sometimes missing | ✗ (`simulate-purchase` = one Test Store purchase) | ✓ `rcc run`, milliseconds |
+| Reproduce failure paths: charge fails → grace period → recovery, churn after billing error | ✗ | hard (Google) to impossible (iOS) | ✗ | ✓ |
+| Assert in CI (exit code, JSON, expectations) | ✗ | ✗ | `--json`, no listener/assertions | ✓ |
+| Hit `localhost` with no tunnel and no RevenueCat account | ✗ | ✗ | ✗ | ✓ |
+| See the *real* events on your laptop | needs a public URL | needs a public URL | ✗ | ✓ `rcc tail` (relay) |
 
 ReveCliCat generates the events itself, so:
 
-- **Coherence is guaranteed** — a state machine rejects impossible sequences (`RENEWAL` before `INITIAL_PURCHASE`, `EXPIRATION` before the period ends) and keeps `app_user_id`, `original_transaction_id`, `expiration_at_ms`, `period_type`… consistent across the sequence.
+- **Coherence is guaranteed** — a state machine rejects impossible sequences (`RENEWAL` before `INITIAL_PURCHASE`, `EXPIRATION` before the period ends) and keeps `app_user_id`, `original_transaction_id`, `expiration_at_ms`, `period_type`… consistent across the sequence — with the id formats and quirks of each store.
 - **Time is simulated** — `advance: P1Y` costs nothing; a year of renewals takes milliseconds.
 - **It is deterministic** — `--seed 42` gives byte-identical payloads on every run.
-- **It runs anywhere** — `localhost`, Docker, GitHub Actions. No tunnel, no dashboard, no App Store.
+- **It runs anywhere** — `localhost`, Docker, GitHub Actions. No tunnel, no dashboard, no store account.
+- **It is checked against reality** — the generator's rules come from the official docs *and* from real events captured with `rcc tail` (a dashboard `TEST`, promotional grants, a full Stripe dunning lifecycle); see [Fidelity & scope](#fidelity--scope).
 
 ## Quickstart (60 seconds)
 
@@ -62,7 +77,7 @@ Point it at your real handler instead (`--to http://localhost:3000/webhook`, or 
 | `rcc send <EVENT_TYPE>` | POST one event. Runs the shortest legal history first (e.g. a purchase before a `RENEWAL`) and sends only the requested event. | `--to`, `--auth-header`, `--user`, `--product`, `--store`, `--environment`, `--set key=value` (repeatable, dot paths), `--seed`, `--dry-run` |
 | `rcc run <scenario.yaml>` | Execute a scenario on a virtual clock and deliver every event. Exit 1 on any non-2xx or failed `expect`. | `--to`, `--auth-header`, `--speed instant\|<ms>`, `--seed`, `--dry-run`, `--json` |
 | `rcc listen` | Local HTTP receiver: validates envelopes, checks the auth header, pretty-prints, optionally forwards. | `--port` (8787), `--auth-header`, `--forward <url>`, `--verbose` |
-| `rcc init` | Create `reveclicat.config.json` and `scenarios/` with the six examples. | `--force` |
+| `rcc init` | Create `reveclicat.config.json` and `scenarios/` with the eight examples. | `--force` |
 | `rcc tail` | Receive **real** RevenueCat webhooks on your machine through a relay and forward them to a local URL. | `--smee [url]` or `--inbox <url> --token <t>` (`--since <seq>`, `--all`), `--forward <url>`, `--verbose` |
 | `rcc inbox` | Self-hosted, persistent webhook inbox that `rcc tail --inbox` reads from. | `--token`, `--auth-header`, `--port` (8788), `--data-dir`, `--max-events` |
 
@@ -151,7 +166,7 @@ rcc tail --smee --forward http://localhost:3000/webhook
 
 ## Authorization
 
-RevenueCat authenticates webhooks with a **plain, static `Authorization` header** whose value you choose in the dashboard — there is no payload signature to verify. ReveCliCat mirrors that: `--auth-header "Bearer dev"` is sent verbatim, and `rcc listen --auth-header …` flags mismatches in red and answers 401. Your handler should compare the header with a constant-time equality check and treat anything else as unauthorized. (RevenueCat also offers an *opt-in* HMAC header, `X-RevenueCat-Webhook-Signature`; it is out of scope for v0.1.)
+RevenueCat authenticates webhooks with a **plain, static `Authorization` header** whose value you choose in the dashboard — there is no payload signature to verify. ReveCliCat mirrors that: `--auth-header "Bearer dev"` is sent verbatim, and `rcc listen --auth-header …` flags mismatches in red and answers 401. Your handler should compare the header with a constant-time equality check and treat anything else as unauthorized. (RevenueCat also offers an *opt-in* HMAC header, `X-RevenueCat-Webhook-Signature`; it is out of scope for now — see the Icebox.)
 
 ## State machine
 
@@ -173,9 +188,11 @@ none ──INITIAL_PURCHASE──▶ trial ──RENEWAL (conversion)──▶ a
 
 ## Fidelity & scope
 
-- Schemas, enums and inclusion rules come from the official docs (fetched 2026-08-29) and the official sample payloads are used as test fixtures. The `TEST` event has no published sample, so its schema is marked *provisional* — a captured real one is very welcome (see `docs/BACKLOG.md`, T-004).
-- The generator models **App Store** (`--store app_store`, 16-digit transaction ids, original kept across resubscriptions), **Google Play** (`--store play_store`, `GPA.…` order ids with `..N` renewal suffixes, `<subscription_id>:<base_plan_id>` product ids, new order on resubscription) and **Stripe** (`--store stripe`, one `si_…` id for the whole subscription, `prod_…` product ids, `renewal_number`, billing issues with the period pre-extended and no grace field, no `UNCANCELLATION`/`TEST` — all taken from real captured events). Amazon, Roku and RevenueCat Billing, a built-in tunnel, a web UI and hosted mode are intentionally out of scope (see the Icebox in `docs/BACKLOG.md`). Receivers accept events from every store.
-- Programmatic use: `import { runScenario, Subscriber, WebhookEnvelopeSchema } from "reveclicat"`.
+- **Sources.** Schemas, enums and inclusion rules come from the official docs (fetched 2026-08-29); the official sample payloads are test fixtures byte for byte. Everything is traced in [`docs/payload-sources.md`](docs/payload-sources.md), and anything not backed by a source is marked `PROVISIONAL`.
+- **Verified against real traffic.** `rcc tail` was used against a real RevenueCat project to capture what the docs do not show: the dashboard `TEST` event (no official sample exists — it arrives as `PLAY_STORE` with fifteen `null` fields), promotional grants (`NON_RENEWING_PURCHASE` → `CANCELLATION` → `EXPIRATION`, all `PRODUCTION`), and a complete Stripe lifecycle of seven events driven with Stripe test clocks. Those captures found and fixed three fidelity defects (documented "Always" fields that are `null`, unknown event types that receivers must accept, a `RENEWAL` that legally arrives from the cancelled state) and are shipped as fixtures in [`test/fixtures/events/real/`](test/fixtures/events/real/README.md).
+- **Three stores in the generator.** **App Store** (`--store app_store`: 16-digit transaction ids, original kept across resubscriptions), **Google Play** (`--store play_store`: `GPA.…` order ids with `..N` renewal suffixes, `<subscription_id>:<base_plan_id>` product ids, new order on resubscription) and **Stripe** (`--store stripe`: one `si_…` id for the whole subscription, `prod_…` product ids, `renewal_number`, billing issues with the period pre-extended and no grace field, no `UNCANCELLATION`/`TEST`). Receivers accept events from every store and every event type.
+- **Out of scope, on purpose.** Amazon, Roku and RevenueCat Billing stores, refund flows, `PRODUCT_CHANGE`/`TRANSFER` generation, a built-in tunnel, a web UI and a hosted mode — see the Icebox in [`docs/BACKLOG.md`](docs/BACKLOG.md).
+- **Programmatic use.** `import { runScenario, Subscriber, WebhookEnvelopeSchema } from "reveclicat"`.
 
 ## How this was built
 
