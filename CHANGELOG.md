@@ -12,4 +12,5 @@ All notable changes to this project are documented here. Format based on [Keep a
 - Six example scenarios: `trial-converts`, `trial-churns`, `billing-issue-recovers`, `billing-issue-churns`, `cancel-then-uncancel`, `happy-year`. (T-032)
 - Zod schemas for `TEST`, `INITIAL_PURCHASE`, `RENEWAL`, `CANCELLATION`, `UNCANCELLATION`, `BILLING_ISSUE`, `EXPIRATION` and the webhook envelope, derived from the official docs (see `docs/payload-sources.md`). (T-003)
 - `examples/express-handler.ts` — minimal idempotent Express handler (auth check, schema validation, dedupe by `event.id`). (T-041)
+- `examples/github-action.yml` — CI workflow that starts the handler and runs two scenarios with `--json`. (T-042)
 - Programmatic API (`reveclicat` package): schemas, `Subscriber`, `runScenario`, `loadScenario`, `VirtualClock`, `createRng`.

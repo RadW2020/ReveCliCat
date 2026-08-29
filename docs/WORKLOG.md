@@ -123,3 +123,14 @@ Diary of work sessions. Newest at the bottom. Format: date · ticket · what was
 - Impl: `createApp({ authHeader?, onEvent? })` — raw-text body so JSON errors are 400s, in-memory `Set` dedupe (comment points to Redis/DB for prod), respond-then-process. Runs standalone with `npx tsx examples/express-handler.ts` (`PORT`, `RC_WEBHOOK_AUTH`).
 - Terminal: `PORT=3007 RC_WEBHOOK_AUTH="Bearer dev" npx tsx examples/express-handler.ts` ⟷ `rcc run scenarios/billing-issue-recovers.yaml --to … --auth-header "Bearer dev"` → 4/4 200, 2/2 expectations; handler log shows the four events.
 - Gates: typecheck ✓ · lint ✓ · tests 160/160 ✓.
+
+## 2026-08-29 · T-042 · `examples/github-action.yml`
+- Tests first (3, parse the workflow with `yaml`): one ubuntu job; checkout + setup-node 20 + `npm ci`; starts `examples/express-handler.ts`, waits on `/health`, runs `trial-churns` and `billing-issue-recovers` with `--json` and `--auth-header`.
+- Impl: `examples/github-action.yml` — uses `node dist/cli.js run` (built from source in this repo; users with `npm i -g reveclicat` use `rcc run`), uploads the two JSON results + handler log as artifacts, `if: always()`.
+- Local rehearsal of the same shell steps: both scenarios exit 0 (3/3 and 4/4 → 200, expectations passed); with a wrong `--auth-header` the run exits 1 and reports the failed `all_responses_status` expectation — exactly what CI needs.
+- Gates: typecheck ✓ · lint ✓ · tests 163/163 ✓.
+
+### Epic 4 summary — CI mode
+**What works:** `expect:` blocks (step/scenario), exit codes 0/1, `--json` single-document output, a copy-pasteable Express handler that validates/authenticates/dedupes, and a GitHub Actions workflow that wires them together (rehearsed locally).
+**Debt:** the workflow was validated by parsing + local shell rehearsal, not by an actual Actions run (no remote CI in v0.1 scope — pushing to GitHub is a human step). `max_response_ms` is a per-event max, not a percentile.
+**Next:** Epic 5 — README (T-050), `rcc init` + LICENSE/CONTRIBUTING/CHANGELOG 0.1.0 (T-051), final polish (T-052).

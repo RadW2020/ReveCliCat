@@ -1,0 +1,57 @@
+# Example: run RevenueCat webhook scenarios against your handler in CI.
+#
+# Copy to .github/workflows/webhooks.yml in *your* repo and replace the
+# "Start webhook handler" step with the command that starts your own server.
+# Unofficial project — not affiliated with RevenueCat, Inc.
+name: webhook-scenarios
+
+on:
+  push:
+  pull_request:
+
+jobs:
+  scenarios:
+    runs-on: ubuntu-latest
+    env:
+      RC_WEBHOOK_AUTH: "Bearer ci-secret"   # the value your handler expects in the Authorization header
+      WEBHOOK_URL: http://localhost:3000/webhook
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+
+      - name: Install
+        run: npm ci
+
+      - name: Build rcc
+        # Not needed once you install the published package (`npm i -g reveclicat`); here we build from source.
+        run: npm run build
+
+      - name: Start webhook handler
+        # Replace with your own server. It must answer 200 to valid events.
+        run: |
+          PORT=3000 npx tsx examples/express-handler.ts > handler.log 2>&1 &
+          for i in $(seq 1 40); do
+            curl -sf http://localhost:3000/health > /dev/null && exit 0
+            sleep 0.25
+          done
+          echo "handler did not become healthy"; cat handler.log; exit 1
+
+      - name: Scenario — trial churns
+        run: node dist/cli.js run scenarios/trial-churns.yaml --to "$WEBHOOK_URL" --auth-header "$RC_WEBHOOK_AUTH" --json > trial-churns.json
+
+      - name: Scenario — billing issue recovers
+        run: node dist/cli.js run scenarios/billing-issue-recovers.yaml --to "$WEBHOOK_URL" --auth-header "$RC_WEBHOOK_AUTH" --json > billing-issue-recovers.json
+
+      - name: Upload run results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: webhook-scenario-results
+          path: |
+            trial-churns.json
+            billing-issue-recovers.json
+            handler.log
