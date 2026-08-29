@@ -4,9 +4,14 @@ All notable changes to this project are documented here. Format based on [Keep a
 
 ## [Unreleased]
 
+## [0.3.0] — 2026-08-29
+
 ### Added
 - Stripe in the generator: `--store stripe` / `subscriber.store: stripe` — constant `si_…` transaction id, `prod_…` product id default, `renewal_number` on every event, `BILLING_ISSUE` with the period pre-extended and `grace_period_expiration_at_ms: null`, recovery `RENEWAL` that does not re-extend, Stripe money fields (commission 0, takehome 1), `country_code: null`. `UNCANCELLATION` and `TEST` are rejected for Stripe with a store-specific message (official compatibility table). All rules derived from a real captured lifecycle (`test/fixtures/events/real/*.stripe.json`). New example `scenarios/stripe-billing-issue-recovers.yaml`. (T-080–T-083)
 - State machine: `legalEvents(state, store)` / `transition(..., { store })` — legality now has a store dimension. (T-082)
+
+### Changed
+- `RENEWAL` is now legal from `cancelled_pending_expiration` (recovery after a `BILLING_ERROR` cancellation, as observed in real Stripe traffic and described for App Store in the official flows). (T-082)
 
 ## [0.2.0] — 2026-08-29
 
@@ -53,7 +58,8 @@ First release. Unofficial project — not affiliated with RevenueCat, Inc.
 - Consistent error output: every error prints `✖ message` + `→ hint`; usage errors (unknown command/option, missing argument) exit with code 2, other failures with 1; `RCC_DEBUG=1` shows stack traces; `NO_COLOR` honoured. (T-052)
 - Programmatic API (`reveclicat` package): schemas, `Subscriber`, `runScenario`, `loadScenario`, `VirtualClock`, `createRng`.
 
-[Unreleased]: https://github.com/RadW2020/ReveCliCat/compare/v0.2.0...HEAD
+[Unreleased]: https://github.com/RadW2020/ReveCliCat/compare/v0.3.0...HEAD
+[0.3.0]: https://github.com/RadW2020/ReveCliCat/compare/v0.2.0...v0.3.0
 [0.2.0]: https://github.com/RadW2020/ReveCliCat/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/RadW2020/ReveCliCat/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/RadW2020/ReveCliCat/releases/tag/v0.1.0
