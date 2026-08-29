@@ -5,6 +5,7 @@ import { registerListen } from "./commands/listen.js";
 import { registerRun } from "./commands/run.js";
 import { registerInit } from "./commands/init.js";
 import { registerTail } from "./commands/tail.js";
+import { registerInbox } from "./commands/inbox.js";
 import { RccError, formatError } from "./core/errors.js";
 import { defaultIo, type Io } from "./core/io.js";
 
@@ -30,6 +31,7 @@ export function buildProgram(io: Io = defaultIo): Command {
   registerRun(program, io);
   registerInit(program, io);
   registerTail(program, io);
+  registerInbox(program, io);
 
   // Route commander's own usage errors through the same formatter as every other error.
   for (const cmd of [program, ...program.commands]) {

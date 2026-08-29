@@ -171,3 +171,9 @@ Diary of work sessions. Newest at the bottom. Format: date · ticket · what was
 - Impl: `src/commands/tail.ts` (`parseSseStream`, `createSmeeChannel`, `startTail` with backoff reconnect, `registerTail`); README "Receive real webhooks" section; CHANGELOG `[Unreleased]`.
 - Real smoke: `rcc tail --smee --forward http://localhost:8787/webhook` → channel created → `curl` POST of the RENEWAL fixture to smee.io → printed `real RENEWAL … → 200 (18 ms)` and delivered to the local `rcc listen`. End to end through the public relay.
 - Gates: typecheck ✓ · lint ✓ · tests 198/198 ✓.
+
+## 2026-08-29 · T-062 · `rcc inbox` + `rcc tail --inbox`
+- Tests first (11): token required; valid deliveries stored with kept headers/raw body/seq and `/health` count; `--auth-header` mismatch → 401 stored `authOk:false`; non-JSON → 400 stored; schema-invalid JSON → 200 stored with `issues[]`; retries linked via `duplicateOf`; 404s; `/events` token auth + `since`/`limit` paging; `/events/stream` SSE replay + live push with header or `?token=`; JSONL persistence across restart + `--max-events` compaction; `tail --inbox` prints/forwards raw body with relayed `Authorization`, 401 → "check --token", `--all` replays in order.
+- Impl: `src/commands/inbox.ts` (append-only `Store`, `startInbox`, `registerInbox` with env fallbacks), `tail.ts` gains the `inbox` source (raw-body forwarding, token, since), `examples/inbox/{Dockerfile,Caddyfile}`, README "self-hosted inbox" block, CHANGELOG.
+- Terminal smoke: `rcc inbox --port 8790 --auth-header "Bearer rc"` + `rcc tail --inbox … --token tok --forward http://localhost:8787/webhook`: valid+auth → 200 (#1), no auth → 401 stored as `AUTH MISMATCH … (retry of #1)`; tail forwarded both with the relayed header (local `listen` answered 401 because it expects a different header — correct: headers are relayed verbatim). 2 JSONL lines on disk.
+- Gates: typecheck ✓ · lint ✓ · tests 209/209 ✓.

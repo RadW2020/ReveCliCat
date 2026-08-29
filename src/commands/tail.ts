@@ -75,7 +75,9 @@ export async function createSmeeChannel(origin = SMEE_ORIGIN): Promise<string> {
 
 /* ------------------------------------------------------------------ tail */
 
-export type TailSource = { kind: "smee"; url: string };
+export type TailSource =
+  | { kind: "smee"; url: string }
+  | { kind: "inbox"; url: string; token: string; since?: number | undefined };
 
 export interface TailOptions {
   source: TailSource;
@@ -94,8 +96,29 @@ export interface TailHandle {
 
 interface RelayedRequest {
   headers: Record<string, string>;
+  /** Parsed body (smee) — used for validation and printing. */
   body: unknown;
+  /** Raw body when the source preserves it (inbox); forwarded verbatim. */
+  raw?: string | undefined;
   timestamp: number | undefined;
+}
+
+/** `rcc inbox` records: `{ seq, receivedAt, headers, body: <raw string>, ... }`. */
+function fromInbox(data: string): RelayedRequest | undefined {
+  let rec: { headers?: Record<string, string>; body?: string; receivedAt?: string };
+  try {
+    rec = JSON.parse(data) as typeof rec;
+  } catch {
+    return undefined;
+  }
+  if (typeof rec.body !== "string") return undefined;
+  let body: unknown = rec.body;
+  try {
+    body = JSON.parse(rec.body);
+  } catch {
+    /* keep raw */
+  }
+  return { headers: rec.headers ?? {}, body, raw: rec.body, timestamp: rec.receivedAt ? Date.parse(rec.receivedAt) : undefined };
 }
 
 /** smee delivers `{ ...lower-cased request headers, body, query, timestamp }`. */
@@ -128,6 +151,16 @@ export function startTail(opts: TailOptions): TailHandle {
   const controller = new AbortController();
   const backoff = opts.backoffMs ?? [1000, 2000, 5000, 10_000, 30_000];
 
+  const src = opts.source;
+  const streamUrl = (): string => {
+    if (src.kind === "smee") return src.url;
+    const u = new URL("/events/stream", src.url.endsWith("/") ? src.url : src.url + "/");
+    if (src.since !== undefined) u.searchParams.set("since", String(src.since));
+    return u.toString();
+  };
+  const streamHeaders = (): Record<string, string> =>
+    src.kind === "inbox" ? { accept: "text/event-stream", authorization: `Bearer ${src.token}` } : { accept: "text/event-stream" };
+
   log(`${green("●")} Tailing ${bold(opts.source.url)}`);
   if (opts.source.kind === "smee") {
     log(`  Paste this URL in RevenueCat → Integrations → Webhooks: ${cyan(opts.source.url)}`);
@@ -156,7 +189,7 @@ export function startTail(opts: TailOptions): TailHandle {
         const res = await fetch(opts.forward, {
           method: "POST",
           headers,
-          body: JSON.stringify(req.body),
+          body: req.raw ?? JSON.stringify(req.body),
           signal: AbortSignal.timeout(30_000),
         });
         const status = res.status < 300 ? green(String(res.status)) : red(String(res.status));
@@ -173,15 +206,15 @@ export function startTail(opts: TailOptions): TailHandle {
     let attempt = 0;
     while (!controller.signal.aborted) {
       try {
-        const res = await fetch(opts.source.url, {
-          headers: { accept: "text/event-stream" },
-          signal: controller.signal,
-        });
+        const res = await fetch(streamUrl(), { headers: streamHeaders(), signal: controller.signal });
+        if (res.status === 401) {
+          throw new RccError(`The inbox at ${src.url} rejected the token (401).`, { hint: "Check --token against the inbox's --token / INBOX_TOKEN." });
+        }
         if (!res.ok || !res.body) throw new Error(`HTTP ${res.status}`);
         attempt = 0;
         for await (const frame of parseSseStream(res.body)) {
           if (frame.event === "ready" || frame.data === "{}") continue;
-          const req = fromSmee(frame.data);
+          const req = src.kind === "inbox" ? fromInbox(frame.data) : fromSmee(frame.data);
           if (req) await handle(req);
         }
         if (controller.signal.aborted) return;
@@ -190,7 +223,8 @@ export function startTail(opts: TailOptions): TailHandle {
         if (controller.signal.aborted) return;
         const delay = backoff[Math.min(attempt, backoff.length - 1)]!;
         attempt++;
-        log(`${dim(clock())}  ${yellow("reconnecting")} in ${delay} ms ${dim(`(${err instanceof Error ? err.message : String(err)})`)}`);
+        const reason = err instanceof RccError ? `${err.message} ${err.hint ?? ""}` : err instanceof Error ? err.message : String(err);
+        log(`${dim(clock())}  ${yellow("reconnecting")} in ${delay} ms ${dim(`(${reason.trim()})`)}`);
         await sleep(delay, controller.signal);
       }
     }
@@ -213,20 +247,39 @@ export function registerTail(program: Command, io: Io): void {
     .command("tail")
     .description("Receive real RevenueCat webhooks on your machine through a relay, print them, and optionally forward them to a local URL.")
     .option("--smee [channel-url]", "use the public smee.io relay; creates a channel when no URL is given")
+    .option("--inbox <url>", "use a self-hosted `rcc inbox` at this URL (requires --token)")
+    .option("--token <secret>", "read token of the inbox")
+    .option("--since <seq>", "inbox only: replay stored events after this sequence number (0 = everything)")
+    .option("--all", "inbox only: replay the whole history (same as --since 0)")
     .option("--forward <url>", "re-POST each event (body + Authorization) to this local URL")
     .option("--verbose", "print the full JSON payload of each event")
     .addHelpText("after", `
 Examples:
   $ rcc tail --smee                                   # prints a URL to paste in RevenueCat → Integrations → Webhooks
   $ rcc tail --smee https://smee.io/abc123 --forward http://localhost:3000/webhook
-  $ rcc tail --smee --verbose`)
-    .action(async (opts: { smee?: string | boolean; forward?: string; verbose?: boolean }) => {
-      if (opts.smee === undefined) {
-        throw new RccError("rcc tail needs a source.", { hint: "Use --smee to receive events through smee.io (zero setup)." });
+  $ rcc tail --smee --verbose
+  $ rcc tail --inbox https://hooks.example.com --token s3cret --all --forward http://localhost:3000/webhook`)
+    .action(async (opts: { smee?: string | boolean; inbox?: string; token?: string; since?: string; all?: boolean; forward?: string; verbose?: boolean }) => {
+      if (opts.smee !== undefined && opts.inbox !== undefined) {
+        throw new RccError("Use either --smee or --inbox, not both.");
+      }
+      if (opts.smee === undefined && opts.inbox === undefined) {
+        throw new RccError("rcc tail needs a source.", {
+          hint: "Use --smee to receive events through smee.io (zero setup), or --inbox <url> --token <t> for a self-hosted inbox.",
+        });
       }
       if (opts.forward !== undefined) assertUrl(opts.forward, "--forward");
-      const url = typeof opts.smee === "string" ? assertUrl(opts.smee, "--smee") : await createSmeeChannel();
-      const handle = startTail({ source: { kind: "smee", url }, forward: opts.forward, verbose: opts.verbose, io });
+      let source: TailSource;
+      if (opts.inbox !== undefined) {
+        if (!opts.token) throw new RccError("--inbox requires --token.", { hint: "The token is the inbox's --token / INBOX_TOKEN." });
+        const since = opts.all ? 0 : opts.since !== undefined ? Number(opts.since) : undefined;
+        if (since !== undefined && (!Number.isInteger(since) || since < 0)) throw new RccError(`Invalid --since "${opts.since ?? ""}".`);
+        source = { kind: "inbox", url: assertUrl(opts.inbox, "--inbox"), token: opts.token, since };
+      } else {
+        const url = typeof opts.smee === "string" ? assertUrl(opts.smee, "--smee") : await createSmeeChannel();
+        source = { kind: "smee", url };
+      }
+      const handle = startTail({ source, forward: opts.forward, verbose: opts.verbose, io });
       const stop = (): void => {
         void handle.close().finally(() => process.exit(0));
       };

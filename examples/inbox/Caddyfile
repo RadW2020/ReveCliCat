@@ -1,0 +1,5 @@
+# Terminates HTTPS for the inbox with an automatic Let's Encrypt certificate.
+# Replace hooks.example.com and run `caddy run` next to the container (or use your PaaS's TLS instead).
+hooks.example.com {
+    reverse_proxy localhost:8788
+}

@@ -59,7 +59,8 @@ Point it at your real handler instead (`--to http://localhost:3000/webhook`, or 
 | `rcc run <scenario.yaml>` | Execute a scenario on a virtual clock and deliver every event. Exit 1 on any non-2xx or failed `expect`. | `--to`, `--auth-header`, `--speed instant\|<ms>`, `--seed`, `--dry-run`, `--json` |
 | `rcc listen` | Local HTTP receiver: validates envelopes, checks the auth header, pretty-prints, optionally forwards. | `--port` (8787), `--auth-header`, `--forward <url>`, `--verbose` |
 | `rcc init` | Create `reveclicat.config.json` and `scenarios/` with the six examples. | `--force` |
-| `rcc tail` | Receive **real** RevenueCat webhooks on your machine through a relay and forward them to a local URL. | `--smee [url]`, `--forward <url>`, `--verbose` |
+| `rcc tail` | Receive **real** RevenueCat webhooks on your machine through a relay and forward them to a local URL. | `--smee [url]` or `--inbox <url> --token <t>` (`--since <seq>`, `--all`), `--forward <url>`, `--verbose` |
+| `rcc inbox` | Self-hosted, persistent webhook inbox that `rcc tail --inbox` reads from. | `--token`, `--auth-header`, `--port` (8788), `--data-dir`, `--max-events` |
 
 Every command has `--help` with defaults and examples. Set `NO_COLOR=1` to disable colours; `RCC_DEBUG=1` prints stack traces.
 
@@ -132,7 +133,16 @@ rcc tail --smee --forward http://localhost:3000/webhook
 
 - `--smee` uses [smee.io](https://smee.io) (GitHub's public webhook relay): zero setup, no account. It keeps **no history** — events only arrive while `rcc tail` is running — and payloads transit a third-party service, so use it for development, not production. Pass an existing channel (`--smee https://smee.io/…`) to keep the URL you already configured in the dashboard.
 - Each event is validated against the schemas (`INVALID` lines tell you what is off), printed in the same format as `rcc listen`, and, with `--forward`, re-POSTed to your local handler with the original `Authorization` header — the same workflow as the Stripe CLI's `listen` command forwarding to localhost.
-- A self-hosted, persistent alternative (`rcc inbox`) is planned for v0.2 — see `specs/F6-inbox.md`.
+- Need history, retries and your own infrastructure? Run the **self-hosted inbox**:
+
+  ```bash
+  # on your server (behind HTTPS — see examples/inbox/Dockerfile and Caddyfile)
+  rcc inbox --token s3cret --auth-header "Bearer from-dashboard"    # RevenueCat → POST https://hooks.example.com/webhook
+  # on your laptop
+  rcc tail --inbox https://hooks.example.com --token s3cret --all --forward http://localhost:3000/webhook
+  ```
+
+  The inbox stores every delivery as JSONL (including RevenueCat's retries, linked by `event.id`), answers 200 to valid events so RevenueCat stops retrying, flags `AUTH MISMATCH`/`INVALID`, and exposes `GET /events`, `GET /events/stream` (SSE) and `GET /health`. Nothing leaves your infrastructure — see `docs/adr/ADR-004-self-hosted-inbox-no-data-custody.md`.
 
 ## Authorization
 

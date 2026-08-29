@@ -126,6 +126,9 @@ Commands:
   tail [options]                 Receive real RevenueCat webhooks on your
                                  machine through a relay, print them, and
                                  optionally forward them to a local URL.
+  inbox [options]                Run a self-hosted webhook inbox: stores every
+                                 delivery (JSONL) and streams it to \`rcc tail
+                                 --inbox\`. Put HTTPS in front.
   help [command]                 display help for command
 "
 `;

@@ -6,6 +6,7 @@ All notable changes to this project are documented here. Format based on [Keep a
 
 ### Added
 - `rcc tail --smee [url]` — receive **real** RevenueCat webhooks on your machine through the public smee.io relay (zero setup, no persistence); validates and prints each event like `rcc listen`; `--forward <url>` re-POSTs body + original `Authorization` to a local handler; `--verbose`. (T-061)
+- `rcc inbox` — self-hosted persistent webhook inbox (`--token`, `--auth-header`, `--port`, `--data-dir`, `--max-events`; env `INBOX_TOKEN`, `RC_WEBHOOK_AUTH`, `PORT`, `INBOX_DATA_DIR`) with `POST /webhook`, `GET /events`, `GET /events/stream` (SSE), `GET /health`; `rcc tail --inbox <url> --token <t> [--since <seq>|--all]` reads from it. `examples/inbox/` Dockerfile + Caddyfile. (T-062)
 
 ## [0.1.0] — 2026-08-29
 

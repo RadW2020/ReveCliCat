@@ -38,7 +38,7 @@ Legend: 🧊 Icebox · 📋 Backlog · 🔨 In progress · ✅ Done · ⛔ Block
 | T-052 | Final polish: errors, `--help`, flag consistency | E5 | ✅ |
 | T-060 | Spec F6 (inbox + tail) and ADR-004 | E6 (v0.2) | ✅ |
 | T-061 | `rcc tail --smee` — receive real webhooks via smee.io, print & forward to localhost | E6 (v0.2) | ✅ |
-| T-062 | `rcc inbox` self-hosted server + `rcc tail --inbox` | E6 (v0.2) | 📋 |
+| T-062 | `rcc inbox` self-hosted server + `rcc tail --inbox` | E6 (v0.2) | ✅ |
 | T-063 | Deploy inbox on maintainer's cloud, capture real events, promote fixtures | E6 (v0.2) | 📋 |
 
 ---
@@ -337,6 +337,7 @@ _(none)_
 - T-052
 - T-060
 - T-061
+- T-062
 
 ## Icebox
 
