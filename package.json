@@ -1,6 +1,6 @@
 {
   "name": "reveclicat",
-  "version": "0.1.1",
+  "version": "0.2.0",
   "description": "Unofficial CLI to simulate RevenueCat subscription lifecycles and test webhooks locally and in CI. Not affiliated with RevenueCat, Inc.",
   "type": "module",
   "license": "MIT",
