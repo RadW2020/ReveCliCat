@@ -101,3 +101,21 @@ describe("T-031 rcc run", () => {
     expect(error!.message).toMatch(/instant/);
   });
 });
+
+describe("T-066 rcc run streams rows live", () => {
+  it("prints header and first row before the run finishes when --speed is set", async () => {
+    const out = new Collector();
+    const program = buildProgram({ stdout: out, stderr: out });
+    program.exitOverride();
+    const file = scenarioFile("name: live\nsteps:\n  - event: TEST\n  - event: TEST\n  - event: TEST\n");
+    const running = program.parseAsync(["node", "rcc", "run", file, "--to", server.url, "--speed", "300"]);
+    await new Promise((r) => setTimeout(r, 150));
+    const early = out.text;
+    expect(early).toMatch(/#\s+event\s+virtual time\s+status\s+latency/);
+    expect(early).toMatch(/\n\s*1\s+TEST\s+\S+\s+200/);
+    expect(early).not.toMatch(/\n\s*3\s+TEST/);
+    await running;
+    expect(out.text).toMatch(/\n\s*3\s+TEST\s+\S+\s+200/);
+    expect(out.text).toMatch(/3 events · 3 ok · 0 failed/);
+  });
+});

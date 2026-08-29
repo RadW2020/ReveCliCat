@@ -42,6 +42,7 @@ Legend: 🧊 Icebox · 📋 Backlog · 🔨 In progress · ✅ Done · ⛔ Block
 | T-063 | Capture real events via smee, promote fixtures | E6 | ✅ |
 | T-064 | Lifecycle schemas: `Always` fields may be null (real captures) | E6 | ✅ |
 | T-065 | Tolerate unknown event types in listen/tail/inbox (forward compatibility) | E6 | ✅ |
+| T-066 | `rcc run` prints table rows live as events are delivered | E5 | ✅ |
 
 ---
 
@@ -320,6 +321,14 @@ The docs say new event types may appear without an `api_version` bump, and a rea
 - [ ] `test/fixtures/events/real/NON_RENEWING_PURCHASE.promotional.json` is accepted by all three; a made-up `FUTURE_EVENT` too; garbage stays 400.
 - [ ] README: note that receivers accept every event type and only *generate* the seven.
 
+### T-066 · `rcc run` streams table rows live
+**Feature:** F3. **Depends on:** T-031
+Found while recording the demo: with `--speed 200` the terminal stays blank for the whole run and the table appears at the end. Rows should appear as each event is delivered (same final layout).
+- [ ] Header is printed before the first event; each row is printed right after its delivery (`onEvent`), with the same column widths as today (widths precomputed from the scenario's event names and fixed-width time/status/latency columns).
+- [ ] Final output is byte-identical in structure to the current table + failed expectations + summary (existing tests keep passing).
+- [ ] Test: with `--speed 300` and 3 events, after ~150 ms stdout already contains row 1 but not row 3.
+- [ ] `--dry-run`/`--json` behaviour unchanged (human output on stderr).
+
 ### T-063 · Real-payload capture & fixture promotion
 **Feature:** F6. **Depends on:** T-061. **Needs a human:** deploy on the maintainer's cloud, configure the RevenueCat webhook to the inbox URL.
 - [ ] Inbox deployed (HTTPS) and registered in `mytestapp` webhooks with an auth header.
@@ -359,6 +368,7 @@ _(none)_
 - T-063
 - T-064
 - T-065
+- T-066
 
 ## Icebox
 

@@ -1,5 +1,6 @@
 import { bold, dim, green, red } from "./colors.js";
-import type { RunResult } from "./engine.js";
+import type { EventResult, RunResult } from "./engine.js";
+import type { Scenario } from "./scenario.js";
 
 /** Render rows as a padded text table. Colour helpers must not affect widths, so cells are coloured after padding. */
 export function table(headers: string[], rows: string[][], colour?: (cell: string, col: number, row: number) => string): string {
@@ -19,20 +20,53 @@ export function humanDays(ms: number): string {
   return `${Math.round(ms / 86_400_000)}d`;
 }
 
-export function renderRunTable(result: RunResult): string {
-  const rows = result.events.map((e, i) => [
-    String(i + 1),
-    e.type,
-    e.virtualTime,
-    e.status === null ? "—" : String(e.status),
-    e.latencyMs === null ? "—" : `${e.latencyMs} ms`,
-  ]);
-  return table(["#", "event", "virtual time", "status", "latency"], rows, (cell, col, row) => {
-    if (col !== 3) return cell;
-    const status = result.events[row]!.status;
-    if (status === null) return dim(cell);
-    return status >= 200 && status < 300 ? green(cell) : red(cell);
-  });
+const RUN_HEADERS = ["#", "event", "virtual time", "status", "latency"] as const;
+
+/**
+ * Table renderer whose column widths are known up front (from the scenario), so rows can be
+ * printed one by one as events are delivered and still line up with the header.
+ */
+export interface LiveTable {
+  header(): string;
+  row(e: EventResult, index: number): string;
+}
+
+export function createRunTable(scenario: Pick<Scenario, "steps">): LiveTable {
+  const eventCount = scenario.steps.filter((s) => s.event !== undefined).length;
+  const eventTypes = scenario.steps.map((s) => s.event ?? "");
+  const widths = [
+    Math.max(RUN_HEADERS[0].length, String(eventCount).length),
+    Math.max(RUN_HEADERS[1].length, ...eventTypes.map((t) => t.length)),
+    Math.max(RUN_HEADERS[2].length, "2025-01-01T00:00:00.000Z".length),
+    RUN_HEADERS[3].length,
+    Math.max(RUN_HEADERS[4].length, "99999 ms".length),
+  ];
+  const pad = (cells: readonly string[], colour?: (cell: string, col: number) => string): string =>
+    cells
+      .map((c, i) => {
+        const padded = i === 0 ? c.padStart(widths[i]!) : c.padEnd(widths[i]!);
+        return colour ? colour(padded, i) : padded;
+      })
+      .join("  ")
+      .trimEnd();
+  return {
+    header: () => dim(pad(RUN_HEADERS)),
+    row: (e, index) =>
+      pad(
+        [String(index + 1), e.type, e.virtualTime, e.status === null ? "—" : String(e.status), e.latencyMs === null ? "—" : `${e.latencyMs} ms`],
+        (cell, col) => {
+          if (col !== 3) return cell;
+          if (e.status === null) return dim(cell);
+          return e.status >= 200 && e.status < 300 ? green(cell) : red(cell);
+        },
+      ),
+  };
+}
+
+/** Whole table at once (same layout as the live version). */
+export function renderRunTable(result: RunResult, scenario?: Pick<Scenario, "steps">): string {
+  const t = createRunTable(scenario ?? { steps: result.events.map((e) => ({ event: e.type })) });
+  return [t.header(), ...result.events.map((e, i) => t.row(e, i))].join("\n");
 }
 
 export function renderRunSummary(result: RunResult): string {

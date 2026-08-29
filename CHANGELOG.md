@@ -20,6 +20,7 @@ First release. Unofficial project — not affiliated with RevenueCat, Inc.
 - `rcc inbox` — self-hosted persistent webhook inbox (`--token`, `--auth-header`, `--port`, `--data-dir`, `--max-events`; env `INBOX_TOKEN`, `RC_WEBHOOK_AUTH`, `PORT`, `INBOX_DATA_DIR`) with `POST /webhook`, `GET /events`, `GET /events/stream` (SSE), `GET /health`; `rcc tail --inbox <url> --token <t> [--since <seq>|--all]` reads from it. `examples/inbox/` Dockerfile + Caddyfile. (T-062)
 
 ### Added (generating & simulating)
+- `rcc run` prints the header up front and each table row as soon as its event is delivered (visible with `--speed`). (T-066)
 - `rcc send <EVENT_TYPE>` — send one schema-valid event; flags `--to`, `--store`, `--user`, `--product`, `--auth-header`, `--environment`, `--set key=value` (repeatable, dot paths), `--seed`, `--dry-run`. Runs a minimal coherent prelude so any of the 7 event types can be sent alone. (T-020)
 - `rcc listen` — local receiver with `--port`, `--forward`, `--auth-header` (flags `AUTH MISMATCH`, 401), `--verbose`; validates envelopes against the official schemas. (T-021)
 - `rcc run <scenario.yaml>` — executes YAML scenarios on a virtual clock; flags `--to`, `--auth-header`, `--speed instant|<ms>`, `--seed`, `--dry-run`, `--json`. Table + summary output; exit 1 on non-2xx or failed expectations. (T-031, T-040)

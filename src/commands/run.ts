@@ -3,7 +3,7 @@ import { RccError } from "../core/errors.js";
 import { runScenario } from "../core/engine.js";
 import { assertUrl } from "../core/http.js";
 import { println, type Io } from "../core/io.js";
-import { renderFailedExpectations, renderRunSummary, renderRunTable } from "../core/output.js";
+import { createRunTable, renderFailedExpectations, renderRunSummary } from "../core/output.js";
 import { loadScenarioWithSource } from "../core/scenario.js";
 import { bold, dim } from "../core/colors.js";
 import { parseSeed } from "./send.js";
@@ -50,6 +50,9 @@ Examples:
       const human = opts.dryRun || opts.json ? io.stderr : io.stdout;
       const desc = loaded.scenario.description ? ` — ${loaded.scenario.description}` : "";
       println(human, `▶ ${bold(loaded.scenario.name)}${dim(desc)}`);
+      const live = createRunTable(loaded.scenario);
+      println(human, live.header());
+      let index = 0;
 
       const result = await runScenario(loaded.scenario, {
         to,
@@ -58,12 +61,12 @@ Examples:
         seed: parseSeed(opts.seed),
         dryRun: opts.dryRun ?? false,
         source: loaded,
-        onEvent: (_r, envelope) => {
+        onEvent: (r, envelope) => {
+          println(human, live.row(r, index++));
           if (opts.dryRun && !opts.json) println(io.stdout, JSON.stringify(envelope));
         },
       });
 
-      println(human, renderRunTable(result));
       for (const line of renderFailedExpectations(result)) println(human, line);
       println(human, renderRunSummary(result));
       if (opts.json) println(io.stdout, JSON.stringify(result, null, 2));
