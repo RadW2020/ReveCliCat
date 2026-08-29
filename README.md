@@ -8,7 +8,7 @@
 
 ReveCliCat is a small TypeScript CLI that generates RevenueCat-shaped webhook events, chains them through a subscription state machine so they stay coherent (same IDs, forward-moving timestamps, fields that mutate the way they really do), and POSTs them to your endpoint — `localhost` included, no tunnel needed. Think of it as the Stripe CLI that RevenueCat does not have.
 
-![rcc run happy-year against rcc listen, then rcc send and rcc tail --smee](docs/demo.gif)
+![rcc run happy-year against rcc listen, then rcc send and rcc tail --smee](https://raw.githubusercontent.com/RadW2020/ReveCliCat/main/docs/demo.gif)
 
 <!-- Regenerate with: npm run build && vhs docs/demo.tape -->
 

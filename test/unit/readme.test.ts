@@ -31,7 +31,7 @@ describe("T-050 README", () => {
       "## CI",
       "examples/github-action.yml",
       "examples/express-handler.ts",
-      "](docs/demo.gif)",
+      "/docs/demo.gif)",
       "## Authorization",
       "## State machine",
       "## License",

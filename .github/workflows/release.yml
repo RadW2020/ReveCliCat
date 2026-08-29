@@ -1,0 +1,30 @@
+# Publishes to npm when a version tag is pushed (npm version patch|minor && git push --follow-tags).
+# Uses npm Trusted Publishing (OIDC): no npm token, no interactive 2FA. One-time setup on npmjs.com:
+#   package → Settings → Trusted Publisher → GitHub Actions: owner RadW2020, repo ReveCliCat, workflow release.yml
+name: release
+
+on:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+  id-token: write   # required for OIDC trusted publishing + provenance
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v5
+      - uses: actions/setup-node@v5
+        with:
+          node-version: 22
+          registry-url: https://registry.npmjs.org
+          cache: npm
+      - run: npm install -g npm@latest   # trusted publishing needs npm >= 11.5.1
+      - run: npm ci
+      - name: Tag must match package.json version
+        run: |
+          PKG=$(node -p "require('./package.json').version")
+          test "v$PKG" = "${GITHUB_REF_NAME}" || { echo "tag ${GITHUB_REF_NAME} != package.json v$PKG"; exit 1; }
+      - run: npm publish --access public --provenance   # prepublishOnly runs check + build

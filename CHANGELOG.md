@@ -4,7 +4,13 @@ All notable changes to this project are documented here. Format based on [Keep a
 
 ## [Unreleased]
 
-_Nothing yet._
+## [0.1.1] — 2026-08-29
+
+### Fixed
+- npm page: demo GIF and CI badge were broken (repository was private; GIF used a relative path). Repository is now public and the GIF uses an absolute URL.
+
+### Added
+- `release.yml` workflow: pushing a `v*` tag publishes to npm via trusted publishing (OIDC, provenance), after checking the tag matches `package.json`.
 
 ## [0.1.0] — 2026-08-29
 
@@ -34,5 +40,6 @@ First release. Unofficial project — not affiliated with RevenueCat, Inc.
 - Consistent error output: every error prints `✖ message` + `→ hint`; usage errors (unknown command/option, missing argument) exit with code 2, other failures with 1; `RCC_DEBUG=1` shows stack traces; `NO_COLOR` honoured. (T-052)
 - Programmatic API (`reveclicat` package): schemas, `Subscriber`, `runScenario`, `loadScenario`, `VirtualClock`, `createRng`.
 
-[Unreleased]: https://github.com/RadW2020/ReveCliCat/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/RadW2020/ReveCliCat/compare/v0.1.1...HEAD
+[0.1.1]: https://github.com/RadW2020/ReveCliCat/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/RadW2020/ReveCliCat/releases/tag/v0.1.0

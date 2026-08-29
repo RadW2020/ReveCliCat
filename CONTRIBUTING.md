@@ -21,6 +21,16 @@ npm run build                        # tsup → dist/cli.js (rcc / purr) + dist/
 - **Traceability.** Log each session in `docs/WORKLOG.md`; move the ticket to Done; update `CHANGELOG.md` and the README when the CLI surface changes.
 - **Commits.** Conventional Commits in English, one ticket per commit: `feat(T-021): ...`, `fix(T-030): ...`, `docs(...)`, `test(...)`, `chore(...)`.
 
+## Releasing
+
+Changes accumulate under `## [Unreleased]` in `CHANGELOG.md`. To ship:
+
+1. Move the entries to a new `## [x.y.z] — date` section (patch for fixes/docs, minor for new features or CLI/YAML surface changes while we are 0.x).
+2. `npm version patch|minor` — bumps `package.json`, commits and tags `vx.y.z` in one step.
+3. `git push --follow-tags` — the `release` workflow publishes to npm (trusted publishing, no local credentials) once CI-equivalent checks pass.
+
+Never republish an existing version; npm versions are immutable.
+
 ## Scope
 
 v0.1 is deliberately small (App Store only, 7 event types, no tunnel/UI/hosting). New ideas go to the **Icebox** section of the backlog with a one-line justification — they are not implemented in v0.1.
