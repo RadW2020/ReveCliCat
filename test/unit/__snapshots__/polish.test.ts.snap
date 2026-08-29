@@ -123,6 +123,9 @@ Commands:
   init [options]                 Create reveclicat.config.json and a scenarios/
                                  folder with the six example scenarios in the
                                  current directory.
+  tail [options]                 Receive real RevenueCat webhooks on your
+                                 machine through a relay, print them, and
+                                 optionally forward them to a local URL.
   help [command]                 display help for command
 "
 `;

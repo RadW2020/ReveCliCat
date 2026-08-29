@@ -163,3 +163,11 @@ Diary of work sessions. Newest at the bottom. Format: date · ticket · what was
 - Context: the maintainer asked whether a webhook inbox on their cloud could serve other users. Assessment: yes as the "receive" half of the Stripe-CLI analogy, but operating other people's payloads (PII) is a data-custody problem → ADR-004: **self-host first**, same code reusable for a future ephemeral relay, no hosted service now.
 - Wrote `specs/F6-inbox.md` (server endpoints/storage/auth, `rcc tail` flags, fidelity loop) and ADR-004; added Epic 6 tickets T-060…T-063 with criteria; Icebox updated (hosted relay, multi-tenant inbox, redaction tooling).
 - T-004 in flight in parallel: ngrok tunnel + `rcc listen --verbose` running; waiting for the maintainer to log into the dashboard tab so the webhook can be configured from the browser.
+
+## 2026-08-29 · T-061 · `rcc tail --smee`
+- Feasibility first: a real POST to a fresh smee.io channel arrived over SSE as one `data:` JSON line with all request headers (incl. `authorization`), parsed `body`, `timestamp` — documented in `specs/F6-inbox.md`. No dependency needed.
+- Tests first (9, against `test/helpers/fake-smee.ts`: `/new` redirect + SSE + POST relay): SSE frame parser (multi-line data, comments), channel creation, unreachable relay, channel URL + dashboard instructions, one-line `real` output, `--verbose`, INVALID path, `--forward` with relayed `Authorization` and local status, forward failure non-fatal, reconnect after drop, clean close.
+- Debugging note: the fake initially split JSON across two `data:` lines at an arbitrary offset → invalid JSON → silently dropped. Real smee sends one line; fake fixed, parser multi-line behaviour kept under its own unit test.
+- Impl: `src/commands/tail.ts` (`parseSseStream`, `createSmeeChannel`, `startTail` with backoff reconnect, `registerTail`); README "Receive real webhooks" section; CHANGELOG `[Unreleased]`.
+- Real smoke: `rcc tail --smee --forward http://localhost:8787/webhook` → channel created → `curl` POST of the RENEWAL fixture to smee.io → printed `real RENEWAL … → 200 (18 ms)` and delivered to the local `rcc listen`. End to end through the public relay.
+- Gates: typecheck ✓ · lint ✓ · tests 198/198 ✓.
