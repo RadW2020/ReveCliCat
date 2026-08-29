@@ -31,7 +31,7 @@ describe("T-050 README", () => {
       "## CI",
       "examples/github-action.yml",
       "examples/express-handler.ts",
-      "<!-- TODO: demo GIF -->",
+      "](docs/demo.gif)",
       "## Authorization",
       "## State machine",
       "## License",
@@ -58,5 +58,13 @@ describe("T-050 README", () => {
     for (const t of ["TEST", "INITIAL_PURCHASE", "RENEWAL", "CANCELLATION", "UNCANCELLATION", "BILLING_ISSUE", "EXPIRATION"]) {
       expect(readme).toContain(t);
     }
+  });
+});
+
+describe("T-066 demo GIF", () => {
+  it("the GIF referenced by the README exists and is a GIF", () => {
+    const gif = readFileSync(join(import.meta.dirname, "../../docs/demo.gif"));
+    expect(gif.subarray(0, 6).toString("latin1")).toMatch(/^GIF8[79]a$/);
+    expect(gif.length).toBeGreaterThan(50_000);
   });
 });
