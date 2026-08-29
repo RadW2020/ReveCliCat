@@ -36,6 +36,10 @@ Legend: 🧊 Icebox · 📋 Backlog · 🔨 In progress · ✅ Done · ⛔ Block
 | T-050 | README (English) | E5 | ✅ |
 | T-051 | `rcc init`, LICENSE, CONTRIBUTING, CHANGELOG 0.1.0 | E5 | ✅ |
 | T-052 | Final polish: errors, `--help`, flag consistency | E5 | ✅ |
+| T-060 | Spec F6 (inbox + tail) and ADR-004 | E6 (v0.2) | ✅ |
+| T-061 | `rcc inbox` — self-hostable store-and-forward webhook server | E6 (v0.2) | 📋 |
+| T-062 | `rcc tail` — stream inbox events to the terminal / forward to localhost | E6 (v0.2) | 📋 |
+| T-063 | Deploy inbox on maintainer's cloud, capture real events, promote fixtures | E6 (v0.2) | 📋 |
 
 ---
 
@@ -271,6 +275,40 @@ Local HTTP receiver that pretty-prints incoming webhook events.
 
 ---
 
+## Epic 6 — Webhook inbox & tail (v0.2)
+
+> Added 2026-08-29 after v0.1 closed. Motivation: receiving *real* RevenueCat webhooks on localhost (the Stripe-CLI "listen" half) and a durable way to capture payloads for fidelity (T-004). Deployment model fixed by ADR-004: self-hosted, no data custody.
+
+### T-060 · Spec F6 + ADR-004
+**Feature:** F6. **Depends on:** —
+- [ ] `specs/F6-inbox.md` defines server endpoints, storage, auth, client flags, and out-of-scope list.
+- [ ] `docs/adr/ADR-004-…` records "self-host first, no data custody" with consequences.
+- [ ] Icebox updated: hosted relay (smee model), multi-tenant inbox, redaction tooling.
+
+### T-061 · `rcc inbox`
+**Feature:** F6. **Depends on:** T-060
+- [ ] `rcc inbox --token t [--port 8788] [--auth-header v] [--data-dir d]` starts; `--token` missing → exit 1 with hint; env fallbacks `INBOX_TOKEN`, `RC_WEBHOOK_AUTH`, `PORT`, `INBOX_DATA_DIR`.
+- [ ] `POST /webhook`: valid + auth OK → 200, stored `{seq, receivedAt, headers, body, valid:true, authOk:true}`; auth mismatch → 401 stored `authOk:false`; non-JSON → 400 stored `valid:false`; JSON but schema-invalid → 200 stored with `issues[]`; same `event.id` again → stored with `duplicateOf`.
+- [ ] `GET /events?since&limit` requires `Authorization: Bearer <token>` (401 otherwise) and returns `{events, next}` in seq order; `GET /events/stream` emits SSE `webhook` events for new records (auth via header or `?token=`), replays from `since`.
+- [ ] Storage is append-only JSONL in `data-dir/events.jsonl`; restart preserves `seq` and history; `--max-events` compaction keeps the newest N.
+- [ ] `GET /health` → `{ok, events}`; unknown → 404 JSON. `startInbox(opts)` returns `{url, close}` for tests.
+- [ ] `examples/inbox/Dockerfile` (+ Caddyfile snippet in README section) builds from the repo and runs `rcc inbox`.
+
+### T-062 · `rcc tail`
+**Feature:** F6. **Depends on:** T-061
+- [ ] `rcc tail --inbox <url> --token <t>` follows the SSE stream and prints one line per event in the `listen` format; `--verbose` prints the body; `--since <seq>` / `--all` replays first.
+- [ ] `--forward <url>` re-POSTs raw body + original `Authorization`; shows the local status; failures are printed, not fatal.
+- [ ] 401 → "check --token" hint; unreachable → actionable message; reconnects with backoff on stream drop (test with a server that closes the connection).
+- [ ] README: new "Receive real webhooks" section (inbox deploy + tail); CHANGELOG `[Unreleased]`.
+
+### T-063 · Real-payload capture & fixture promotion
+**Feature:** F6. **Depends on:** T-061. **Needs a human:** deploy on the maintainer's cloud, configure the RevenueCat webhook to the inbox URL.
+- [ ] Inbox deployed (HTTPS) and registered in `mytestapp` webhooks with an auth header.
+- [ ] Dashboard "send test event" captured → `test/fixtures/events/real/TEST.json` (redacted) → closes **T-004** (`payload-sources.md` row → VERIFIED with date).
+- [ ] Promotional grant/revoke via API v1 → real `INITIAL_PURCHASE`/`EXPIRATION` (store `PROMOTIONAL`) captured; a test validates them against our schemas; any mismatch becomes a fix ticket.
+
+---
+
 ## In progress
 
 _(none)_
@@ -295,11 +333,14 @@ _(none)_
 - T-050
 - T-051
 - T-052
+- T-060
 
 ## Icebox
 
 Not for v0.1. Each line has its justification.
 
+- Hosted public webhook relay (smee.io model) and multi-tenant persistent inbox — ADR-004: self-host first; operating other people's payloads needs a privacy/TOS story and real demand.
+- Payload redaction tooling for promoting captured events to fixtures — manual for v0.2.
 - Google Play / Stripe / Amazon / Roku stores — v0.1 proves the model with `app_store`; other stores add store-specific fields we have not verified.
 - Integrated tunnel (ngrok-like) — main use case is local generation; no tunnel needed.
 - Web UI — CLI is the product; a UI would dilute focus.

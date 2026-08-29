@@ -158,3 +158,8 @@ Diary of work sessions. Newest at the bottom. Format: date · ticket · what was
 **What works:** the whole v0.1 surface — `send`, `listen`, `run`, `init`, config file, expectations, `--json`, deterministic seeds, actionable errors, English README with disclaimer, MIT license, CONTRIBUTING, CHANGELOG 0.1.0, reference handler and GitHub Action.
 **Debt / open items:** T-004 (validate the PROVISIONAL `TEST` schema — needs a human with a RevenueCat dashboard); month arithmetic drifts after a Feb clamp on unseeded runs (Icebox note); the GitHub Action was rehearsed locally, not on GitHub; demo GIF placeholder in README.
 **Backlog status:** 18/19 tickets done; T-004 blocked on external access. Nothing left that I can unblock alone.
+
+## 2026-08-29 · T-060 · Epic 6 planning — webhook inbox & `rcc tail` (v0.2)
+- Context: the maintainer asked whether a webhook inbox on their cloud could serve other users. Assessment: yes as the "receive" half of the Stripe-CLI analogy, but operating other people's payloads (PII) is a data-custody problem → ADR-004: **self-host first**, same code reusable for a future ephemeral relay, no hosted service now.
+- Wrote `specs/F6-inbox.md` (server endpoints/storage/auth, `rcc tail` flags, fidelity loop) and ADR-004; added Epic 6 tickets T-060…T-063 with criteria; Icebox updated (hosted relay, multi-tenant inbox, redaction tooling).
+- T-004 in flight in parallel: ngrok tunnel + `rcc listen --verbose` running; waiting for the maintainer to log into the dashboard tab so the webhook can be configured from the browser.
