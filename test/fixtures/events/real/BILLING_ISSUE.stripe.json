@@ -1,0 +1,41 @@
+{
+  "api_version": "1.0",
+  "event": {
+    "id": "0605CFA8-2226-42D3-8861-B8698BAFE2D9",
+    "event_timestamp_ms": 1788035126566,
+    "app_id": "app5d1101a0b8",
+    "app_user_id": "rcc_stripe_test",
+    "original_app_user_id": "rcc_stripe_test",
+    "aliases": [
+      "rcc_stripe_test"
+    ],
+    "subscriber_attributes": {},
+    "product_id": "prod_rcc_premium_1788033273",
+    "period_type": "NORMAL",
+    "purchased_at_ms": 1791230075000,
+    "expiration_at_ms": 1793908475000,
+    "environment": "SANDBOX",
+    "entitlement_id": null,
+    "entitlement_ids": [
+      "premium"
+    ],
+    "presented_offering_id": null,
+    "transaction_id": "si_VACkn6IOj7aBN6",
+    "original_transaction_id": "si_VACkn6IOj7aBN6",
+    "is_family_share": false,
+    "country_code": null,
+    "store": "STRIPE",
+    "currency": "USD",
+    "price": 0,
+    "price_in_purchased_currency": 0,
+    "tax_percentage": null,
+    "commission_percentage": 0,
+    "takehome_percentage": 1,
+    "offer_code": null,
+    "renewal_number": 3,
+    "metadata": {},
+    "type": "BILLING_ISSUE",
+    "grace_period_expiration_at_ms": null,
+    "price_id": "price_1U9sKkDzkdPB0aL8f62WtAb2"
+  }
+}

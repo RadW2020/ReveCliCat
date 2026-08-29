@@ -75,6 +75,20 @@ Captured on project `mytestapp` through `rcc tail --smee` → `rcc listen --verb
 | All 7 v0.1 event types apply to Google Play | S2 store-compatibility table |
 | Real dashboard TEST event is `store: PLAY_STORE` | `test/fixtures/events/real/TEST.json` |
 
+## Stripe — real capture (Epic 8, 2026-08-29)
+Setup: Stripe sandbox connected to `mytestapp` as a Web → Stripe config; product/price/customer/subscription created through the Stripe API on a **test clock**; linked to `app_user_id` with `POST /v1/receipts` + `X-Platform: stripe` (needs the Stripe app's *public* key — the secret key is rejected). RevenueCat refreshes Stripe subscriptions on its own schedule ("up to two hours"); re-posting the same `fetch_token` forces the refresh and the webhooks follow within seconds. Fixtures: `test/fixtures/events/real/*.stripe.json`.
+
+| Observation | Generator consequence |
+|-------------|-----------------------|
+| `transaction_id` = `original_transaction_id` = Stripe subscription item id (`si_` + 14 chars) on **every** event, renewals included | Stripe ids never change within a subscription |
+| `product_id` = Stripe **Product** id (`prod_…`), even though the price (`price_…`) was what we imported and what `/v1/subscribers` reports | default `prod_…`-shaped product id |
+| `renewal_number` present on all events: 1 (initial), 2 (trial conversion), 3 (next renewal — counted at the *failed* attempt) | Stripe payloads carry `renewal_number`; BILLING_ISSUE bumps it |
+| `BILLING_ISSUE`: `grace_period_expiration_at_ms: null`, `expiration_at_ms` already extended one period (RevenueCat registers the invoice when created, default setting); a `CANCELLATION` with `BILLING_ERROR` is dispatched at the same time | Stripe BILLING_ISSUE extends expiration by one period, grace null |
+| Recovery `RENEWAL` (invoice paid later): `expiration_at_ms` unchanged, `renewal_number` unchanged, `is_trial_conversion: false` | recovery does not extend again |
+| `country_code: null`; `commission_percentage: 0`; `takehome_percentage: 1`; `tax_percentage: 0` (null on BILLING_ISSUE/EXPIRATION); `is_family_share: false`; `environment: SANDBOX` for test mode | defaults for the Stripe generator |
+| `period_type` TRIAL → NORMAL exactly like the stores; `price: 0` on non-purchase events | unchanged |
+| Store-compatibility table (S2): Stripe emits no `UNCANCELLATION` and no `TEST` | those events are illegal for `store: stripe` |
+
 ## Flow facts used by the state machine (S2, S4)
 - Trial start = `INITIAL_PURCHASE` with `period_type: TRIAL`; trial → paid = `RENEWAL` (`is_trial_conversion: true`).
 - Cancellation does not revoke access; `EXPIRATION` arrives at period end. Re-enabling before expiry = `UNCANCELLATION`.
