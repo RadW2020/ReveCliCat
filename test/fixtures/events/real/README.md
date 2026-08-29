@@ -5,3 +5,6 @@ Payloads received from RevenueCat itself (not from the docs), captured with `rcc
 | File | Captured | How | Notes |
 |------|----------|-----|-------|
 | `TEST.json` | 2026-08-29 | Dashboard → Integrations → Webhooks → send test event (project `mytestapp`, sandbox) | `store: PLAY_STORE`; 15 lifecycle keys present with `null` (`transaction_id`, `original_transaction_id`, `is_family_share`, prices, `renewal_number`, `metadata`…); `id` is an upper-case UUID; subscriber attributes are RevenueCat's own dummy data. |
+| `CANCELLATION.promotional.json` | 2026-08-29 | API v1 `revoke_promotionals` on customer `rcc_promo_test` | store `PROMOTIONAL`, env `PRODUCTION`, `period_type: PROMOTIONAL`, `cancel_reason: DEVELOPER_INITIATED`; `is_family_share` and `country_code` are `null` (docs: "Always"); `renewal_number`/`metadata` present as `null`. Delivered ~2 s after the API call. |
+| `EXPIRATION.promotional.json` | 2026-08-29 | same revoke (dispatched together with the CANCELLATION) | `expiration_reason: UNSUBSCRIBE` (not DEVELOPER_INITIATED); `tax_percentage`/`commission_percentage` null. |
+| `NON_RENEWING_PURCHASE.promotional.json` | 2026-08-29 | API v1 promotional grant (`duration: weekly`) | A promotional grant emits `NON_RENEWING_PURCHASE`, **not** `INITIAL_PURCHASE`. Out of the v0.1 seven types — used to test unknown-type tolerance. |

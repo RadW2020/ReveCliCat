@@ -53,6 +53,18 @@ Subscription lifecycle: `product_id`, `period_type`, `purchased_at_ms`, `expirat
 | `cancel_reason` | `UNSUBSCRIBE`, `BILLING_ERROR`, `DEVELOPER_INITIATED`, `PRICE_INCREASE`, `CUSTOMER_SUPPORT`, `UNKNOWN` |
 | `expiration_reason` | `UNSUBSCRIBE`, `BILLING_ERROR`, `DEVELOPER_INITIATED`, `PRICE_INCREASE`, `CUSTOMER_SUPPORT`, `UNKNOWN`, `SUBSCRIPTION_PAUSED` |
 
+## Real captures (2026-08-29) — what the docs did not say
+Captured on project `mytestapp` through `rcc tail --smee` → `rcc listen --verbose` (fixtures in `test/fixtures/events/real/`):
+
+| Observation | Impact |
+|-------------|--------|
+| API v1 promotional **grant** emits `NON_RENEWING_PURCHASE` (store `PROMOTIONAL`, `period_type: PROMOTIONAL`, env `PRODUCTION`), not `INITIAL_PURCHASE`. | Receivers must accept event types outside our seven → `classifyEnvelope()` + `UNSUPPORTED <TYPE>` handling (T-065). |
+| API v1 **revoke** emits `CANCELLATION` (`cancel_reason: DEVELOPER_INITIATED`) **and** `EXPIRATION` (`expiration_reason: UNSUBSCRIBE`), dispatched together. | Reason enums confirmed; note the EXPIRATION reason is `UNSUBSCRIBE`, not `DEVELOPER_INITIATED`. |
+| `is_family_share: null` and `country_code: null` on PROMOTIONAL lifecycle events; `renewal_number`, `metadata`, `tax_percentage`, `commission_percentage`, `presented_offering_id`, `offer_code` present as `null`. | "Always" really means *key present, may be null* → lifecycle `is_family_share`/`country_code` are nullable (T-064). |
+| `id` is an **upper-case** UUID; PROMOTIONAL `transaction_id` = `original_transaction_id` = 32-hex string. | Schemas accept any string; generator keeps App Store-style ids. |
+| Delivery latency ≈ **2 s** after the API call (docs: 5–60 s). A dashboard TEST event answered with 400 was **not retried** within 70 min, and neither it nor a filtered-out event appear in the dashboard's "Webhook Events" table. | Test events look non-persisted/non-retried; do not rely on retries to validate idempotency. |
+| Webhook "Environment: Sandbox only" silently drops promotional (PRODUCTION) events. | Documented in README (use "Both" for API-driven captures). |
+
 ## Flow facts used by the state machine (S2, S4)
 - Trial start = `INITIAL_PURCHASE` with `period_type: TRIAL`; trial → paid = `RENEWAL` (`is_trial_conversion: true`).
 - Cancellation does not revoke access; `EXPIRATION` arrives at period end. Re-enabling before expiry = `UNCANCELLATION`.

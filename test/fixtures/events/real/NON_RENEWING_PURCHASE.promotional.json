@@ -1,0 +1,41 @@
+{
+  "event": {
+    "event_timestamp_ms": 1788003471400,
+    "product_id": "rc_promo_premium_weekly",
+    "period_type": "PROMOTIONAL",
+    "purchased_at_ms": 1788003471345,
+    "expiration_at_ms": 1788608271345,
+    "environment": "PRODUCTION",
+    "entitlement_id": "premium",
+    "entitlement_ids": [
+      "premium"
+    ],
+    "presented_offering_id": null,
+    "transaction_id": "a0448238ac7cf64e94e09df858c1bb4e",
+    "original_transaction_id": "a0448238ac7cf64e94e09df858c1bb4e",
+    "is_family_share": null,
+    "country_code": null,
+    "app_user_id": "rcc_promo_test",
+    "aliases": [
+      "rcc_promo_test"
+    ],
+    "original_app_user_id": "rcc_promo_test",
+    "currency": "USD",
+    "price": 0,
+    "price_in_purchased_currency": 0,
+    "subscriber_attributes": {},
+    "store": "PROMOTIONAL",
+    "takehome_percentage": 1,
+    "offer_code": null,
+    "tax_percentage": null,
+    "commission_percentage": null,
+    "metadata": null,
+    "renewal_number": null,
+    "discount_percentage": null,
+    "discount_amount": null,
+    "discount_identifier": null,
+    "type": "NON_RENEWING_PURCHASE",
+    "id": "8CAE99F0-DBB5-41C5-9B46-900FEC5FEC52"
+  },
+  "api_version": "1.0"
+}
