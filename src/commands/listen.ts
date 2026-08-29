@@ -137,21 +137,21 @@ export function registerListen(program: Command, io: Io): void {
   program
     .command("listen")
     .description("Start a local HTTP server that receives, validates and pretty-prints webhook events.")
-    .option("--port <n>", "port to listen on", (v: string) => Number(v), DEFAULT_PORT)
+    .option("--port <n>", "port to listen on", String(DEFAULT_PORT))
     .option("--forward <url>", "forward each request (body + Authorization) to this URL and relay its status")
     .option("--auth-header <value>", "expected Authorization header; mismatches are flagged and answered 401")
-    .option("--verbose", "print the full JSON payload of each event", false)
+    .option("--verbose", "print the full JSON payload of each event")
     .addHelpText("after", `
 Examples:
   $ rcc listen
   $ rcc listen --port 9000 --auth-header "Bearer dev" --verbose
   $ rcc listen --forward http://localhost:3000/webhook`)
-    .action(async (opts: { port: number; forward?: string; authHeader?: string; verbose: boolean }) => {
-      if (!Number.isInteger(opts.port) || opts.port < 0 || opts.port > 65535) {
-        throw new RccError(`Invalid --port "${String(opts.port)}".`, { hint: "Use an integer between 1 and 65535." });
+    .action(async (opts: { port: string; forward?: string; authHeader?: string; verbose?: boolean }) => {
+      if (!/^\d{1,5}$/.test(opts.port) || Number(opts.port) > 65535) {
+        throw new RccError(`Invalid --port "${opts.port}".`, { hint: "Use an integer between 1 and 65535." });
       }
       if (opts.forward !== undefined) assertUrl(opts.forward, "--forward");
-      const listener = await startListener({ ...opts, io });
+      const listener = await startListener({ ...opts, port: Number(opts.port), io });
       const stop = (): void => {
         void listener.close().finally(() => process.exit(0));
       };

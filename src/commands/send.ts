@@ -19,7 +19,7 @@ export interface SendOptions {
   environment?: string | undefined;
   set?: string[] | undefined;
   seed?: string;
-  dryRun?: boolean;
+  dryRun?: boolean | undefined;
 }
 
 /** Parse repeatable `--set key=value`. Values are JSON when they parse, otherwise strings. */
@@ -102,7 +102,7 @@ export function registerSend(program: Command, io: Io): void {
     .option("--environment <env>", `${ENVIRONMENTS.join(" | ")} (default: SANDBOX, or "environment" in ${CONFIG_FILE})`)
     .option("--set <key=value>", "override a payload field (repeatable, dot paths allowed)", (v: string, acc: string[] | undefined) => [...(acc ?? []), v])
     .option("--seed <seed>", "deterministic ids and timestamps")
-    .option("--dry-run", "print the payload instead of sending it", false)
+    .option("--dry-run", "print the payload instead of sending it")
     .addHelpText("after", `
 Examples:
   $ rcc send INITIAL_PURCHASE

@@ -35,7 +35,7 @@ Legend: 🧊 Icebox · 📋 Backlog · 🔨 In progress · ✅ Done · ⛔ Block
 | T-042 | `examples/github-action.yml` | E4 | ✅ |
 | T-050 | README (English) | E5 | ✅ |
 | T-051 | `rcc init`, LICENSE, CONTRIBUTING, CHANGELOG 0.1.0 | E5 | ✅ |
-| T-052 | Final polish: errors, `--help`, flag consistency | E5 | 📋 |
+| T-052 | Final polish: errors, `--help`, flag consistency | E5 | ✅ |
 
 ---
 
@@ -294,6 +294,7 @@ _(none)_
 - T-042
 - T-050
 - T-051
+- T-052
 
 ## Icebox
 
@@ -305,4 +306,5 @@ Not for v0.1. Each line has its justification.
 - Hosted mode — no infra in v0.1.
 - Real npm publish — release readiness is in scope, publishing is a human decision.
 - Cryptographic payload signing — RevenueCat uses a plain Authorization header; documented in README instead. (RevenueCat's opt-in HMAC header `X-RevenueCat-Webhook-Signature` could be a v0.2 flag.)
+- Anchored renewal day-of-month — `advance: P1M` is relative, so an unseeded run starting Jan 31 clamps to Feb 28 and stays on the 28th (App Store re-anchors to the original day). Payloads stay internally coherent; only the calendar drifts. Fix would be an `advance: to_expiration` step.
 - Refund / early-expiration flows (`CUSTOMER_SUPPORT`, `DEVELOPER_INITIATED`, `PRICE_INCREASE`) — v0.1 time-guards EXPIRATION; refunds need their own semantics (negative prices).

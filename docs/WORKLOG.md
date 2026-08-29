@@ -146,3 +146,15 @@ Diary of work sessions. Newest at the bottom. Format: date · ticket · what was
 - Tests first (4): non-affiliation disclaimer on the first non-empty line; required sections/placeholders (tagline, What/Why, 60-second quickstart, commands table, scenario format, CI, `<!-- TODO: demo GIF -->`, Authorization, State machine, License, `purr` alias); **bidirectional flag consistency** — every `--flag` in the README exists in `--help` and every `--help` flag is documented; all four commands and seven event types mentioned.
 - Wrote `README.md`: disclaimer, tagline, real `rcc run` output, What/Why, quickstart, commands table + examples, config precedence, annotated scenario format, CI section linking both examples, Authorization (plain static header, HMAC out of scope), state diagram, fidelity & scope, contributing, MIT.
 - Gates: typecheck ✓ · lint ✓ · tests 176/176 ✓.
+
+## 2026-08-29 · T-052 · Final polish: errors, `--help`, flag consistency
+- Review of every error path in the built CLI found: commander usage errors bypassed our formatter and exited 1 (spec says 2); `--port abc` reported `"NaN"`; boolean flags showed `(default: false)`.
+- Tests first (13): snapshot of `rcc --help` and all four subcommands (`test/unit/__snapshots__/polish.test.ts.snap`); every subcommand has an example and no `(default: false)`/`coming soon`; shared flags `--to/--auth-header/--seed/--dry-run` exist on both `send` and `run` with identical descriptions where semantics match; usage errors → `✖ … → Run \`rcc <cmd> --help\` for usage.`, exit 2; `--port` keeps the input; `formatError` with/without `RCC_DEBUG`.
+- Impl: `buildProgram` installs `exitOverride` (non-zero → 2) and a per-command `outputError` that reuses `formatError`; `cli.ts` handles `CommanderError` (`--help`/`--version` exit 0); booleans without explicit `false` default; `--port` validated as a string.
+- Gates: typecheck ✓ · lint ✓ · tests 189/189 ✓ · `npm pack --dry-run`: 14 files, 109.5 kB (dist, scenarios, README, LICENSE).
+
+### Epic 5 summary — Release readiness (and v0.1 milestone)
+**Smoke demo, end to end, from a clean directory:** `rcc init` → 6 scenarios + config; `PORT=3011 RC_WEBHOOK_AUTH="Bearer demo" npx tsx examples/express-handler.ts`; `rcc run` on all six scenarios (`--seed 2026`) → 31/31 events answered 200, every expectation passed, spans 7d…365d; `rcc run scenarios/happy-year.yaml --json` parses to 13 events, `ok: true`.
+**What works:** the whole v0.1 surface — `send`, `listen`, `run`, `init`, config file, expectations, `--json`, deterministic seeds, actionable errors, English README with disclaimer, MIT license, CONTRIBUTING, CHANGELOG 0.1.0, reference handler and GitHub Action.
+**Debt / open items:** T-004 (validate the PROVISIONAL `TEST` schema — needs a human with a RevenueCat dashboard); month arithmetic drifts after a Feb clamp on unseeded runs (Icebox note); the GitHub Action was rehearsed locally, not on GitHub; demo GIF placeholder in README.
+**Backlog status:** 18/19 tickets done; T-004 blocked on external access. Nothing left that I can unblock alone.

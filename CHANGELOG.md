@@ -19,4 +19,5 @@ First release. Unofficial project — not affiliated with RevenueCat, Inc.
 - `examples/github-action.yml` — CI workflow that starts the handler and runs two scenarios with `--json`. (T-042)
 - `rcc init` — creates `reveclicat.config.json` and `scenarios/` with the six examples; `--force` to overwrite. `send`/`run` read defaults (`to`, `authHeader`, `store`, `environment`) from the config file; flags win. (T-051)
 - MIT license, CONTRIBUTING guide. (T-051)
+- Consistent error output: every error prints `✖ message` + `→ hint`; usage errors (unknown command/option, missing argument) exit with code 2, other failures with 1; `RCC_DEBUG=1` shows stack traces; `NO_COLOR` honoured. (T-052)
 - Programmatic API (`reveclicat` package): schemas, `Subscriber`, `runScenario`, `loadScenario`, `VirtualClock`, `createRng`.

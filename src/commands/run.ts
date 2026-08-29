@@ -14,8 +14,8 @@ export interface RunCommandOptions {
   authHeader?: string | undefined;
   speed: string;
   seed?: string;
-  dryRun: boolean;
-  json: boolean;
+  dryRun?: boolean | undefined;
+  json?: boolean | undefined;
 }
 
 export function parseSpeed(input: string): "instant" | number {
@@ -34,8 +34,8 @@ export function registerRun(program: Command, io: Io): void {
     .option("--auth-header <value>", `value sent as the Authorization header (default: "authHeader" in ${CONFIG_FILE})`)
     .option("--speed <instant|ms>", "wall-clock pause between events", "instant")
     .option("--seed <seed>", "deterministic ids and timestamps")
-    .option("--dry-run", "print each envelope as JSON (one per line) instead of sending", false)
-    .option("--json", "print the full run result as one JSON document on stdout (human output goes to stderr)", false)
+    .option("--dry-run", "print each envelope as JSON (one per line) instead of sending")
+    .option("--json", "print the full run result as one JSON document on stdout (human output goes to stderr)")
     .addHelpText("after", `
 Examples:
   $ rcc run scenarios/trial-churns.yaml
@@ -56,7 +56,7 @@ Examples:
         authHeader: d.authHeader,
         speed,
         seed: parseSeed(opts.seed),
-        dryRun: opts.dryRun,
+        dryRun: opts.dryRun ?? false,
         source: loaded,
         onEvent: (_r, envelope) => {
           if (opts.dryRun && !opts.json) println(io.stdout, JSON.stringify(envelope));

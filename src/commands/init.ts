@@ -7,7 +7,7 @@ import { println, type Io } from "../core/io.js";
 import { bold, dim, green } from "../core/colors.js";
 
 export interface InitOptions {
-  force: boolean;
+  force?: boolean | undefined;
 }
 
 /** Create the config file and example scenarios in `cwd`. Returns the files written. */
@@ -39,7 +39,7 @@ export function registerInit(program: Command, io: Io): void {
   program
     .command("init")
     .description(`Create ${CONFIG_FILE} and a scenarios/ folder with the six example scenarios in the current directory.`)
-    .option("--force", "overwrite existing files", false)
+    .option("--force", "overwrite existing files")
     .addHelpText("after", `
 Examples:
   $ rcc init

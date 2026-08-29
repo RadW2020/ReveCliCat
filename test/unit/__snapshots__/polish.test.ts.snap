@@ -1,0 +1,128 @@
+// Vitest Snapshot v1, https://vitest.dev/guide/snapshot.html
+
+exports[`T-052 --help > help for ["init"] is stable 1`] = `
+"Usage: rcc init [options]
+
+Create reveclicat.config.json and a scenarios/ folder with the six example
+scenarios in the current directory.
+
+Options:
+  --force     overwrite existing files
+  -h, --help  display help for command
+
+Examples:
+  $ rcc init
+  $ rcc init --force
+"
+`;
+
+exports[`T-052 --help > help for ["listen"] is stable 1`] = `
+"Usage: rcc listen [options]
+
+Start a local HTTP server that receives, validates and pretty-prints webhook
+events.
+
+Options:
+  --port <n>             port to listen on (default: "8787")
+  --forward <url>        forward each request (body + Authorization) to this URL
+                         and relay its status
+  --auth-header <value>  expected Authorization header; mismatches are flagged
+                         and answered 401
+  --verbose              print the full JSON payload of each event
+  -h, --help             display help for command
+
+Examples:
+  $ rcc listen
+  $ rcc listen --port 9000 --auth-header "Bearer dev" --verbose
+  $ rcc listen --forward http://localhost:3000/webhook
+"
+`;
+
+exports[`T-052 --help > help for ["run"] is stable 1`] = `
+"Usage: rcc run [options] <scenario.yaml>
+
+Run a scenario: advance a virtual clock, emit a coherent event sequence and
+deliver it over HTTP.
+
+Arguments:
+  scenario.yaml          scenario file to execute
+
+Options:
+  --to <url>             target URL (default: http://localhost:3000/webhook, or
+                         "to" in reveclicat.config.json)
+  --auth-header <value>  value sent as the Authorization header (default:
+                         "authHeader" in reveclicat.config.json)
+  --speed <instant|ms>   wall-clock pause between events (default: "instant")
+  --seed <seed>          deterministic ids and timestamps
+  --dry-run              print each envelope as JSON (one per line) instead of
+                         sending
+  --json                 print the full run result as one JSON document on
+                         stdout (human output goes to stderr)
+  -h, --help             display help for command
+
+Examples:
+  $ rcc run scenarios/trial-churns.yaml
+  $ rcc run scenarios/happy-year.yaml --to http://localhost:8787/webhook --speed 250
+  $ rcc run scenarios/billing-issue-recovers.yaml --dry-run --seed 42 | jq .event.type
+  $ rcc run scenarios/happy-year.yaml --json > result.json   # CI: exit 1 on any failed expectation
+"
+`;
+
+exports[`T-052 --help > help for ["send"] is stable 1`] = `
+"Usage: rcc send [options] <EVENT_TYPE>
+
+Send a single, schema-valid RevenueCat webhook event to your endpoint.
+
+Arguments:
+  EVENT_TYPE              event to send: TEST | INITIAL_PURCHASE | RENEWAL |
+                          CANCELLATION | UNCANCELLATION | BILLING_ISSUE |
+                          EXPIRATION
+
+Options:
+  --to <url>              target URL (default: http://localhost:3000/webhook, or
+                          "to" in reveclicat.config.json)
+  --store <store>         store: app_store (default: app_store, or "store" in
+                          reveclicat.config.json)
+  --user <app_user_id>    app_user_id (default: generated $RCAnonymousID)
+  --product <product_id>  product_id (default: "com.example.premium.monthly")
+  --auth-header <value>   value sent as the Authorization header (default:
+                          "authHeader" in reveclicat.config.json)
+  --environment <env>     SANDBOX | PRODUCTION (default: SANDBOX, or
+                          "environment" in reveclicat.config.json)
+  --set <key=value>       override a payload field (repeatable, dot paths
+                          allowed)
+  --seed <seed>           deterministic ids and timestamps
+  --dry-run               print the payload instead of sending it
+  -h, --help              display help for command
+
+Examples:
+  $ rcc send INITIAL_PURCHASE
+  $ rcc send RENEWAL --to http://localhost:8787/webhook --auth-header "Bearer dev"
+  $ rcc send CANCELLATION --set cancel_reason=BILLING_ERROR --dry-run | jq .event.type
+"
+`;
+
+exports[`T-052 --help > help for [] is stable 1`] = `
+"Usage: rcc [options] [command]
+
+Simulate RevenueCat subscription lifecycles and test webhooks locally and in CI.
+Unofficial project — not affiliated with RevenueCat, Inc.
+
+Options:
+  -v, --version                  print the version
+  -h, --help                     display help for command
+
+Commands:
+  send [options] <EVENT_TYPE>    Send a single, schema-valid RevenueCat webhook
+                                 event to your endpoint.
+  listen [options]               Start a local HTTP server that receives,
+                                 validates and pretty-prints webhook events.
+  run [options] <scenario.yaml>  Run a scenario: advance a virtual clock, emit a
+                                 coherent event sequence and deliver it over
+                                 HTTP.
+  init [options]                 Create reveclicat.config.json and a scenarios/
+                                 folder with the six example scenarios in the
+                                 current directory.
+  help [command]                 display help for command
+"
+`;
