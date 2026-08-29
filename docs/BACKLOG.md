@@ -37,8 +37,8 @@ Legend: 🧊 Icebox · 📋 Backlog · 🔨 In progress · ✅ Done · ⛔ Block
 | T-051 | `rcc init`, LICENSE, CONTRIBUTING, CHANGELOG 0.1.0 | E5 | ✅ |
 | T-052 | Final polish: errors, `--help`, flag consistency | E5 | ✅ |
 | T-060 | Spec F6 (inbox + tail) and ADR-004 | E6 (v0.2) | ✅ |
-| T-061 | `rcc inbox` — self-hostable store-and-forward webhook server | E6 (v0.2) | 📋 |
-| T-062 | `rcc tail` — stream inbox events to the terminal / forward to localhost | E6 (v0.2) | 📋 |
+| T-061 | `rcc tail --smee` — receive real webhooks via smee.io, print & forward to localhost | E6 (v0.2) | 📋 |
+| T-062 | `rcc inbox` self-hosted server + `rcc tail --inbox` | E6 (v0.2) | 📋 |
 | T-063 | Deploy inbox on maintainer's cloud, capture real events, promote fixtures | E6 (v0.2) | 📋 |
 
 ---
@@ -285,21 +285,23 @@ Local HTTP receiver that pretty-prints incoming webhook events.
 - [ ] `docs/adr/ADR-004-…` records "self-host first, no data custody" with consequences.
 - [ ] Icebox updated: hosted relay (smee model), multi-tenant inbox, redaction tooling.
 
-### T-061 · `rcc inbox`
+### T-061 · `rcc tail --smee`
 **Feature:** F6. **Depends on:** T-060
+- [ ] `rcc tail --smee` with no URL requests `https://smee.io/new`, follows the 302 and prints the channel URL with the instruction to paste it in the dashboard; `--smee <url>` reuses a channel. `--smee` and `--inbox` together → usage error.
+- [ ] SSE client (no dependency): parses `id:`/`event:`/`data:` frames, ignores `ready`/pings, tolerates multi-line data; reconnects with backoff (1 s → 30 s) when the stream drops; Ctrl-C exits 0.
+- [ ] Each relayed request is turned into `{ headers, body }` and validated with `WebhookEnvelopeSchema`; printed one-line in the `listen` format prefixed `real`; `INVALID` line with issues when the schema rejects it (still forwarded); `--verbose` prints the body.
+- [ ] `--forward <url>` re-POSTs `JSON.stringify(body)` with `content-type: application/json` and the relayed `authorization` header; prints the local status; failures printed, not fatal.
+- [ ] Tests run against a local fake smee (SSE server in-process): channel creation redirect, frame parsing, forward with auth header, reconnect after server close, invalid payload path.
+- [ ] README "Receive real webhooks" section (smee first, inbox later); CHANGELOG `[Unreleased]`.
+
+### T-062 · `rcc inbox` + `rcc tail --inbox`
+**Feature:** F6. **Depends on:** T-061
 - [ ] `rcc inbox --token t [--port 8788] [--auth-header v] [--data-dir d]` starts; `--token` missing → exit 1 with hint; env fallbacks `INBOX_TOKEN`, `RC_WEBHOOK_AUTH`, `PORT`, `INBOX_DATA_DIR`.
 - [ ] `POST /webhook`: valid + auth OK → 200, stored `{seq, receivedAt, headers, body, valid:true, authOk:true}`; auth mismatch → 401 stored `authOk:false`; non-JSON → 400 stored `valid:false`; JSON but schema-invalid → 200 stored with `issues[]`; same `event.id` again → stored with `duplicateOf`.
-- [ ] `GET /events?since&limit` requires `Authorization: Bearer <token>` (401 otherwise) and returns `{events, next}` in seq order; `GET /events/stream` emits SSE `webhook` events for new records (auth via header or `?token=`), replays from `since`.
-- [ ] Storage is append-only JSONL in `data-dir/events.jsonl`; restart preserves `seq` and history; `--max-events` compaction keeps the newest N.
-- [ ] `GET /health` → `{ok, events}`; unknown → 404 JSON. `startInbox(opts)` returns `{url, close}` for tests.
-- [ ] `examples/inbox/Dockerfile` (+ Caddyfile snippet in README section) builds from the repo and runs `rcc inbox`.
-
-### T-062 · `rcc tail`
-**Feature:** F6. **Depends on:** T-061
-- [ ] `rcc tail --inbox <url> --token <t>` follows the SSE stream and prints one line per event in the `listen` format; `--verbose` prints the body; `--since <seq>` / `--all` replays first.
-- [ ] `--forward <url>` re-POSTs raw body + original `Authorization`; shows the local status; failures are printed, not fatal.
-- [ ] 401 → "check --token" hint; unreachable → actionable message; reconnects with backoff on stream drop (test with a server that closes the connection).
-- [ ] README: new "Receive real webhooks" section (inbox deploy + tail); CHANGELOG `[Unreleased]`.
+- [ ] `GET /events?since&limit` requires `Authorization: Bearer <token>` (401 otherwise) and returns `{events, next}`; `GET /events/stream` emits SSE `webhook` events (auth via header or `?token=`), replays from `since`.
+- [ ] Append-only JSONL in `data-dir/events.jsonl`; restart preserves `seq`; `--max-events` compaction. `GET /health`; unknown → 404 JSON. `startInbox(opts)` returns `{url, close}`.
+- [ ] `rcc tail --inbox <url> --token <t> [--since|--all]` reuses the T-061 SSE client and printer; 401 → "check --token" hint.
+- [ ] `examples/inbox/Dockerfile` (+ Caddy snippet); README section extended.
 
 ### T-063 · Real-payload capture & fixture promotion
 **Feature:** F6. **Depends on:** T-061. **Needs a human:** deploy on the maintainer's cloud, configure the RevenueCat webhook to the inbox URL.
