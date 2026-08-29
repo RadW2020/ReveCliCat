@@ -46,6 +46,10 @@ Legend: 🧊 Icebox · 📋 Backlog · 🔨 In progress · ✅ Done · ⛔ Block
 | T-070 | Spec F7: Google Play in the generator | E7 | ✅ |
 | T-071 | `play_store`: Google-shaped ids and defaults in `Subscriber` | E7 | ✅ |
 | T-072 | `play_store` on the CLI surface: `--store`, scenarios, config, example, docs | E7 | ✅ |
+| T-080 | Capture real Stripe events (test mode + test clocks) → fixtures | E8 | 🔨 |
+| T-081 | Spec F8: Stripe in the generator, store-specific legal events | E8 | 📋 |
+| T-082 | `stripe` store in `Subscriber` + state machine per store | E8 | 📋 |
+| T-083 | `stripe` on the CLI surface: `--store`, scenarios, example, docs | E8 | 📋 |
 
 ---
 
