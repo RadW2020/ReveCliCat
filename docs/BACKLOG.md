@@ -381,7 +381,7 @@ Not for v0.1. Each line has its justification.
 - Integrated tunnel (ngrok-like) — main use case is local generation; no tunnel needed.
 - Web UI — CLI is the product; a UI would dilute focus.
 - Hosted mode — no infra in v0.1.
-- Real npm publish — release readiness is in scope, publishing is a human decision.
+- ~~Real npm publish~~ — done by the maintainer on 2026-08-29: `reveclicat@0.1.0` on npm (2FA/passkey web flow, interactive terminal).
 - Cryptographic payload signing — RevenueCat uses a plain Authorization header; documented in README instead. (RevenueCat's opt-in HMAC header `X-RevenueCat-Webhook-Signature` could be a v0.2 flag.)
 - Anchored renewal day-of-month — `advance: P1M` is relative, so an unseeded run starting Jan 31 clamps to Feb 28 and stays on the 28th (App Store re-anchors to the original day). Payloads stay internally coherent; only the calendar drifts. Fix would be an `advance: to_expiration` step.
 - Refund / early-expiration flows (`CUSTOMER_SUPPORT`, `DEVELOPER_INITIATED`, `PRICE_INCREASE`) — v0.1 time-guards EXPIRATION; refunds need their own semantics (negative prices).
