@@ -1,0 +1,16 @@
+name: cancel-then-uncancel
+description: A paying subscriber cancels, changes their mind before expiry, and the subscription renews normally
+subscriber:
+  app_user_id: auto
+  product_id: com.example.premium.monthly
+  period: P1M
+steps:
+  - event: INITIAL_PURCHASE      # no trial: goes straight to active
+  - advance: P10D
+  - event: CANCELLATION          # auto-renew off
+  - advance: P5D
+  - event: UNCANCELLATION        # auto-renew back on; entitlements never lost
+  - advance: P15D
+  - event: RENEWAL               # renews at the end of the period as if nothing happened
+expect:
+  all_responses_status: 200

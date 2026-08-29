@@ -1,0 +1,20 @@
+name: billing-issue-recovers
+description: Trial converts, the first renewal charge fails, and payment recovers within the grace period
+subscriber:
+  app_user_id: auto
+  product_id: com.example.premium.monthly
+  period: P1M
+  trial: P1W
+  grace_period: P16D
+steps:
+  - event: INITIAL_PURCHASE      # trial starts
+  - advance: P1W
+  - event: RENEWAL               # trial → paid
+  - advance: P1M
+  - event: BILLING_ISSUE         # charge failed; grace period opens (grace_period_expiration_at_ms)
+  - advance: P3D
+  - event: RENEWAL               # payment recovered; access never lapsed
+    expect:
+      response_status: 200
+expect:
+  all_responses_status: 200

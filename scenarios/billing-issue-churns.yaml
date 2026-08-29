@@ -1,0 +1,18 @@
+name: billing-issue-churns
+description: Trial converts, the first renewal charge fails, and the grace period ends without recovery
+subscriber:
+  app_user_id: auto
+  product_id: com.example.premium.monthly
+  period: P1M
+  trial: P1W
+  grace_period: P16D
+steps:
+  - event: INITIAL_PURCHASE      # trial starts
+  - advance: P1W
+  - event: RENEWAL               # trial → paid
+  - advance: P1M
+  - event: BILLING_ISSUE         # charge failed; grace period opens
+  - advance: P16D
+  - event: EXPIRATION            # expiration_reason: BILLING_ERROR — revoke access
+expect:
+  all_responses_status: 200

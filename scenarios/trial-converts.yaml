@@ -1,0 +1,15 @@
+name: trial-converts
+description: A one-week free trial converts to a paid monthly subscription and renews once more
+subscriber:
+  app_user_id: auto
+  product_id: com.example.premium.monthly
+  period: P1M
+  trial: P1W
+steps:
+  - event: INITIAL_PURCHASE      # trial starts (period_type: TRIAL, price 0)
+  - advance: P1W
+  - event: RENEWAL               # trial → paid (is_trial_conversion: true)
+  - advance: P1M
+  - event: RENEWAL               # first regular renewal
+expect:
+  all_responses_status: 200

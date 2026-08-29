@@ -1,0 +1,15 @@
+name: trial-churns
+description: A one-week free trial is cancelled on day 2; access ends when the trial expires
+subscriber:
+  app_user_id: auto
+  product_id: com.example.premium.monthly
+  period: P1M
+  trial: P1W
+steps:
+  - event: INITIAL_PURCHASE      # trial starts
+  - advance: P2D
+  - event: CANCELLATION          # auto-renew off; access continues until expiry
+  - advance: P5D
+  - event: EXPIRATION            # expiration_reason: UNSUBSCRIBE
+expect:
+  all_responses_status: 200

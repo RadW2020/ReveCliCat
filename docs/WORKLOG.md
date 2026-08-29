@@ -96,3 +96,15 @@ Diary of work sessions. Newest at the bottom. Format: date · ticket · what was
 - Impl: `parseScenarioWithSource`/`loadScenarioWithSource` (step positions), `runScenario()` in `src/core/engine.ts`, `src/core/output.ts` (padded table with post-padding colour, summary), `src/commands/run.ts`. Public API widened in `src/index.ts`.
 - Terminal smoke: `rcc listen --port 8798` ⟷ `rcc run demo.yaml --seed 7` → 4/4 events 200, `virtual span 41d (2025-01-01 → 2025-02-11)`; illegal step → `step 2 (file:4): Illegal transition …`, exit 1.
 - Gates: typecheck ✓ · lint ✓ · tests 137/137 ✓.
+
+## 2026-08-29 · T-032 · The 6 example scenarios
+- Tests first (`examples.test.ts`, 9): exactly six files ship; each parses, has a real description, runs legally in dry-run with every payload schema-valid and the documented event sequence; `happy-year` = 13 events over exactly one virtual year (2025-01-01 → 2026-01-01, last expiration 2026-02-01); churn reasons (`BILLING_ERROR` vs `UNSUBSCRIBE`, trial expiration keeps `period_type: TRIAL`).
+- Files: `scenarios/{trial-converts,trial-churns,billing-issue-recovers,billing-issue-churns,cancel-then-uncancel,happy-year}.yaml`, commented step by step, all with `expect.all_responses_status: 200` (evaluated in T-040).
+- Terminal: `rcc run scenarios/happy-year.yaml --dry-run --seed 3` → 13 events, `virtual span 365d`.
+- Gates: typecheck ✓ · lint ✓ · tests 146/146 ✓.
+
+### Epic 3 summary — Scenario engine
+**What works:** YAML scenarios with strict validation and line/column errors; `rcc run` walks them against a virtual clock, delivers coherent events over real HTTP, prints a table + summary, exits 1 on any non-2xx, and is byte-reproducible with `--seed`. Six curated scenarios cover trial conversion/churn, billing-issue recovery/churn, cancel/uncancel and a full year.
+**Smoke demo:** `rcc listen --port 8798` ⟷ `rcc run demo.yaml --seed 7` (4/4 → 200); `rcc run scenarios/happy-year.yaml --dry-run` (13 events, 365d).
+**Debt:** `expect:` blocks are parsed but not yet evaluated (T-040, next). Span is shown in days only.
+**Next:** Epic 4 — CI mode (T-040), reference Express handler (T-041), GitHub Action example (T-042).

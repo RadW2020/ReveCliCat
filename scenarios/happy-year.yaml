@@ -1,0 +1,35 @@
+name: happy-year
+description: A loyal monthly subscriber with no trial renews every month for a full year (13 events, one virtual year)
+subscriber:
+  app_user_id: auto
+  product_id: com.example.premium.monthly
+  period: P1M
+steps:
+  - event: INITIAL_PURCHASE
+  - advance: P1M
+  - event: RENEWAL               # renewal 1
+  - advance: P1M
+  - event: RENEWAL               # renewal 2
+  - advance: P1M
+  - event: RENEWAL               # renewal 3
+  - advance: P1M
+  - event: RENEWAL               # renewal 4
+  - advance: P1M
+  - event: RENEWAL               # renewal 5
+  - advance: P1M
+  - event: RENEWAL               # renewal 6
+  - advance: P1M
+  - event: RENEWAL               # renewal 7
+  - advance: P1M
+  - event: RENEWAL               # renewal 8
+  - advance: P1M
+  - event: RENEWAL               # renewal 9
+  - advance: P1M
+  - event: RENEWAL               # renewal 10
+  - advance: P1M
+  - event: RENEWAL               # renewal 11
+  - advance: P1M
+  - event: RENEWAL               # renewal 12
+expect:
+  all_responses_status: 200
+  max_response_ms: 2000
