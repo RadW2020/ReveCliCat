@@ -26,7 +26,7 @@ Full research notes (verbatim quotes, complete field tables, all sample JSON): [
 | `UNCANCELLATION` | S2, S4 | S3 | VERIFIED |
 | `BILLING_ISSUE` | S2, S4 | S3 | VERIFIED |
 | `EXPIRATION` | S2, S4 | S3 | VERIFIED |
-| `TEST` | S1 "Testing", S2 (field groups) | **none published** | **PROVISIONAL** → ticket T-004 |
+| `TEST` | S1 "Testing", S2 (field groups) | **real capture** `test/fixtures/events/real/TEST.json` (2026-08-29) | VERIFIED (T-004) |
 
 ## Envelope & transport (S1, S2)
 - `POST`, JSON body: `{ "api_version": "1.0", "event": { ... } }`. Only documented `api_version` is `"1.0"`; new fields/event types may appear **without** a version bump → schemas are non-strict (unknown keys pass through) and `api_version` is validated as a string.
@@ -59,5 +59,10 @@ Subscription lifecycle: `product_id`, `period_type`, `purchased_at_ms`, `expirat
 - Billing failure: `BILLING_ISSUE` (+ a `CANCELLATION` with `cancel_reason: BILLING_ERROR` in the real flow); with a grace period, `RENEWAL` recovers or `EXPIRATION` (`expiration_reason: BILLING_ERROR`) churns.
 - `EXPIRATION` after a voluntary cancel carries `expiration_reason: UNSUBSCRIBE`.
 
-## TEST (PROVISIONAL)
-Docs: "RevenueCat issued a test event. This event uses a purchase-like sample payload and isn't persisted in production." Triggered manually from the dashboard; applicable field groups = Common + Subscriber identity + Subscription lifecycle. No official sample exists. Our schema: lifecycle shape with `type: "TEST"`, identity/lifecycle fields optional+nullable. **T-004** tracks validating it against a real dashboard-issued event.
+## TEST (VERIFIED 2026-08-29 by capture)
+Docs: "RevenueCat issued a test event. This event uses a purchase-like sample payload and isn't persisted in production." No official sample exists, so we captured one: dashboard → Integrations → Webhooks → send test event, delivered through `rcc tail --smee` to `rcc listen --verbose` (project `mytestapp`, sandbox). Observed:
+- Envelope `api_version: "1.0"`; `type: "TEST"`; `id` is an **upper-case** UUID; `app_id` present.
+- Common + identity fields all present and non-null (`aliases` has two ids; `subscriber_attributes` carries RevenueCat's dummy `$email`, `$displayName`, `$phoneNumber` and a custom attribute).
+- Lifecycle keys are present but **15 of them are `null`**: `entitlement_id`, `entitlement_ids`, `presented_offering_id`, `transaction_id`, `original_transaction_id`, `is_family_share`, `currency`, `price`, `price_in_purchased_currency`, `takehome_percentage`, `offer_code`, `tax_percentage`, `commission_percentage`, `metadata`, `renewal_number`. Non-null: `product_id: "test_product"`, `period_type: NORMAL`, `purchased_at_ms`, `expiration_at_ms` (+2 h), `environment: SANDBOX`, `country_code: US`, `store: PLAY_STORE`.
+- Consequence: `TestEventSchema` = common + identity required, every lifecycle field `.nullable().optional()`. Lifecycle events keep the stricter "Always ⇒ non-null string/boolean" typing from the docs until a real capture says otherwise (T-063).
+- Our first response was 400 (schema too strict) → RevenueCat scheduled retries; the retry is expected to reuse `id` and `event_timestamp_ms` (S1) — see WORKLOG T-004 for the observation.

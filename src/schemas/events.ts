@@ -92,14 +92,25 @@ export const ExpirationEventSchema = LifecycleEventBase.extend({
   expiration_reason: z.enum(EXPIRATION_REASONS),
 });
 
+/** Make every field of a shape `.nullable().optional()` while keeping the key types. */
+function nullableOptional<T extends Record<string, z.ZodType>>(shape: T): { [K in keyof T]: z.ZodOptional<z.ZodNullable<T[K]>> } {
+  return Object.fromEntries(Object.entries(shape).map(([k, schema]) => [k, schema.nullable().optional()])) as {
+    [K in keyof T]: z.ZodOptional<z.ZodNullable<T[K]>>;
+  };
+}
+
 /**
- * PROVISIONAL (see docs/payload-sources.md, T-004): RevenueCat publishes no official TEST sample.
- * Docs say it is "purchase-like" with Common + Subscriber identity + Subscription lifecycle groups,
- * so lifecycle fields are accepted but not required.
+ * VERIFIED against a real dashboard test event captured 2026-08-29 (test/fixtures/events/real/TEST.json).
+ * RevenueCat publishes no sample; the real payload is "purchase-like" but every subscription-lifecycle
+ * field may be null (transaction ids, prices, is_family_share, renewal_number, metadata...). Common and
+ * subscriber-identity fields are always present.
  */
-export const TestEventSchema = LifecycleEventBase.partial()
-  .required({ id: true, event_timestamp_ms: true, app_user_id: true, original_app_user_id: true, aliases: true })
-  .extend({ type: z.literal("TEST") });
+export const TestEventSchema = z.looseObject({
+  type: z.literal("TEST"),
+  ...common,
+  ...identity,
+  ...nullableOptional(lifecycle),
+});
 
 export const EVENT_SCHEMAS = {
   TEST: TestEventSchema,

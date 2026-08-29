@@ -177,3 +177,10 @@ Diary of work sessions. Newest at the bottom. Format: date · ticket · what was
 - Impl: `src/commands/inbox.ts` (append-only `Store`, `startInbox`, `registerInbox` with env fallbacks), `tail.ts` gains the `inbox` source (raw-body forwarding, token, since), `examples/inbox/{Dockerfile,Caddyfile}`, README "self-hosted inbox" block, CHANGELOG.
 - Terminal smoke: `rcc inbox --port 8790 --auth-header "Bearer rc"` + `rcc tail --inbox … --token tok --forward http://localhost:8787/webhook`: valid+auth → 200 (#1), no auth → 401 stored as `AUTH MISMATCH … (retry of #1)`; tail forwarded both with the relayed header (local `listen` answered 401 because it expects a different header — correct: headers are relayed verbatim). 2 JSONL lines on disk.
 - Gates: typecheck ✓ · lint ✓ · tests 209/209 ✓.
+
+## 2026-08-29 · T-004 · Real `TEST` event captured — schema fixed, PROVISIONAL → VERIFIED
+- Path: maintainer configured the dashboard webhook to the smee channel with auth `Bearer rcc-t004` → `rcc tail --smee --forward` → `rcc listen --verbose` on :8787. First real event arrived 10:25:04 and our own listener flagged it **INVALID** (400): `transaction_id`, `original_transaction_id`, `is_family_share` (+12 more) are `null` in the real TEST payload; `store` is `PLAY_STORE`. Exactly the fidelity gap the ticket existed for.
+- Test first: `schemas.test.ts` "real captured payloads validate" with `test/fixtures/events/real/TEST.json` (red), then `TestEventSchema` = common + identity required, every lifecycle field `nullable().optional()` via a typed `nullableOptional()` helper (green). Lifecycle event schemas unchanged (docs say non-null; no real capture yet — T-063).
+- Docs: `payload-sources.md` TEST row → VERIFIED with the observed field table; fixture README; CHANGELOG `Fixed`.
+- Rebuilt and restarted the listener; replaying the captured payload → 200. RevenueCat should retry the 400'd delivery (5/10/20/40/80 min) reusing `id`/`event_timestamp_ms` — observation pending below.
+- Gates: typecheck ✓ · lint ✓ · tests 210/210 ✓.

@@ -116,3 +116,18 @@ describe("T-003 event-specific fields", () => {
     expect(TestEventSchema.safeParse({ type: "TEST", id: "x" }).success).toBe(false);
   });
 });
+
+describe("T-004 real captured payloads validate", () => {
+  it("the dashboard TEST event (2026-08-29) validates: lifecycle fields may all be null", () => {
+    const real = JSON.parse(readFileSync(join(FIX, "real/TEST.json"), "utf8")) as WebhookEnvelope;
+    const env = WebhookEnvelopeSchema.safeParse(real);
+    expect(env.success, JSON.stringify(env.success ? null : env.error.issues.slice(0, 3))).toBe(true);
+    const ev = TestEventSchema.parse(real.event);
+    expect(ev.store).toBe("PLAY_STORE");
+    expect(ev.transaction_id).toBeNull();
+    expect(ev.is_family_share).toBeNull();
+    expect(ev.renewal_number).toBeNull();
+    expect(ev.metadata).toBeNull();
+    expect(ev.app_user_id).toMatch(/^[0-9a-f-]{36}$/);
+  });
+});
