@@ -216,3 +216,9 @@ Diary of work sessions. Newest at the bottom. Format: date · ticket · what was
 - Verified from the public registry into a clean prefix: `reveclicat@0.1.0`, `rcc`/`purr --version` → 0.1.0, `rcc init` → 7 files, `rcc run scenarios/billing-issue-recovers.yaml --dry-run --seed 1` → 4 events, 2/2 expectations; runtime deps exactly `commander`, `yaml`, `zod`.
 - GitHub: tag `v0.1.0` + release, CI green on main and tag. https://www.npmjs.com/package/reveclicat
 - Still on the maintainer: rotate both RevenueCat API keys pasted in chat; optional cleanup of `mytestapp` (entitlement `premium`, customers `rcc_probe`/`rcc_promo_test`, webhook `reveclicat`).
+
+## 2026-08-29 · 0.1.1 — public repo, trusted publishing, method documented
+- Repo made public (open-source project published on npm with MIT + CONTRIBUTING had to be visible); npm page fixes (absolute GIF URL; CI badge now reachable).
+- `release.yml`: tag `v*` → checks tag == package.json → `npm publish --provenance` via OIDC trusted publishing. Two false starts, both instructive: (1) E404 on PUT = OIDC claim mismatch — the trusted publisher had been saved with owner `radw2020`; npm matches owner/repo **case-sensitively** against GitHub's `RadW2020`; (2) removing `registry-url` from setup-node made npm skip the OIDC exchange entirely (ENEEDAUTH) — it must stay. Fixed by editing the publisher owner; rerun succeeded: `+ reveclicat@0.1.1`, provenance in the sigstore log.
+- Method made explicit for readers: README "How this was built", `docs/CONSTITUTION.md` (maintainer's original ten articles, verbatim), header on this worklog. Decision recorded: no history rewriting — the one-day build is real and the method is the point.
+- Release flow from now on: move `[Unreleased]` → version in CHANGELOG, `npm version patch|minor`, `git push --follow-tags`. No local npm credentials involved.
