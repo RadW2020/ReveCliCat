@@ -4,6 +4,8 @@ All notable changes to this project are documented here. Format based on [Keep a
 
 ## [Unreleased]
 
+## [0.2.0] — 2026-08-29
+
 ### Added
 - Google Play in the generator: `--store play_store` / `subscriber.store: play_store` emit `store: PLAY_STORE`, `GPA.dddd-dddd-dddd-ddddd` order ids with `..N` renewal suffixes (Google's `Purchase.getOrderId` convention), a new order on resubscription, and the `<subscription_id>:<base_plan_id>` default product id. New example `scenarios/play-trial-converts.yaml` (`rcc init` now copies 7 scenarios). (T-071, T-072)
 
@@ -47,6 +49,7 @@ First release. Unofficial project — not affiliated with RevenueCat, Inc.
 - Consistent error output: every error prints `✖ message` + `→ hint`; usage errors (unknown command/option, missing argument) exit with code 2, other failures with 1; `RCC_DEBUG=1` shows stack traces; `NO_COLOR` honoured. (T-052)
 - Programmatic API (`reveclicat` package): schemas, `Subscriber`, `runScenario`, `loadScenario`, `VirtualClock`, `createRng`.
 
-[Unreleased]: https://github.com/RadW2020/ReveCliCat/compare/v0.1.1...HEAD
+[Unreleased]: https://github.com/RadW2020/ReveCliCat/compare/v0.2.0...HEAD
+[0.2.0]: https://github.com/RadW2020/ReveCliCat/compare/v0.1.1...v0.2.0
 [0.1.1]: https://github.com/RadW2020/ReveCliCat/compare/v0.1.0...v0.1.1
 [0.1.0]: https://github.com/RadW2020/ReveCliCat/releases/tag/v0.1.0
