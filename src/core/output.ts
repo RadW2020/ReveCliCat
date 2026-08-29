@@ -43,6 +43,17 @@ export function renderRunSummary(result: RunResult): string {
   const counts = result.events.some((e) => e.status === null)
     ? `${total} events · dry run`
     : `${total} events · ${okCount} ok · ${failed} failed`;
+  const exps = result.expectations;
+  const expText = exps.length ? ` · ${exps.filter((e) => e.ok).length}/${exps.length} expectations passed` : "";
   const mark = result.ok ? green("✔") : red("✖");
-  return `${mark} ${bold(counts)} · virtual span ${span}`;
+  return `${mark} ${bold(counts)} · virtual span ${span}${expText}`;
+}
+
+export function renderFailedExpectations(result: RunResult): string[] {
+  return result.expectations
+    .filter((e) => !e.ok)
+    .map((e) => {
+      const where = e.scope === "step" ? `step ${e.step! + 1} ${result.events.find((ev) => ev.step === e.step)?.type ?? ""}` : "scenario";
+      return `${red("✖")} expectation failed · ${where} · ${e.rule}: expected ${e.expected}, got ${e.actual}`;
+    });
 }

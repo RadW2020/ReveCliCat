@@ -108,3 +108,11 @@ Diary of work sessions. Newest at the bottom. Format: date · ticket · what was
 **Smoke demo:** `rcc listen --port 8798` ⟷ `rcc run demo.yaml --seed 7` (4/4 → 200); `rcc run scenarios/happy-year.yaml --dry-run` (13 events, 365d).
 **Debt:** `expect:` blocks are parsed but not yet evaluated (T-040, next). Span is shown in days only.
 **Next:** Epic 4 — CI mode (T-040), reference Express handler (T-041), GitHub Action example (T-042).
+
+## 2026-08-29 · T-040 · CI mode: `expect:` blocks, exit codes, `--json`
+- Spec: `specs/F4-ci.md` (expectation semantics incl. dry-run "skipped", exit codes, JSON document shape, T-041/T-042 contracts).
+- Tests first (9): pure `evaluateExpectations` (step + scenario rules, offending-step reporting for `all_responses_status`/`max_response_ms`, none defined, dry-run skipped); `rcc run` exit codes with per-failure lines and `N/M expectations passed`; `--json` = exactly one document on stdout with human output on stderr; `--json --dry-run`; transport error under `--json` leaves stdout empty.
+- Impl: `evaluateExpectations()` + `RunResult.ok` now includes expectations (`engine.ts`), `renderFailedExpectations` + summary suffix (`output.ts`), `--json` flag (`run.ts`).
+- Housekeeping: CHANGELOG `[Unreleased]` caught up with the CLI surface added by T-020/021/030/031/032/040 (art. 10 — should have been per ticket; from here on it is).
+- Terminal: `rcc run scenarios/trial-churns.yaml --json --dry-run | node -e …` parses: 3 events, 1 expectation, ok=true.
+- Gates: typecheck ✓ · lint ✓ · tests 155/155 ✓.

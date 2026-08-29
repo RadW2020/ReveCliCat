@@ -3,7 +3,7 @@ import { RccError } from "../core/errors.js";
 import { runScenario } from "../core/engine.js";
 import { assertUrl } from "../core/http.js";
 import { println, type Io } from "../core/io.js";
-import { renderRunSummary, renderRunTable } from "../core/output.js";
+import { renderFailedExpectations, renderRunSummary, renderRunTable } from "../core/output.js";
 import { loadScenarioWithSource } from "../core/scenario.js";
 import { bold, dim } from "../core/colors.js";
 import { DEFAULT_TARGET, parseSeed } from "./send.js";
@@ -14,6 +14,7 @@ export interface RunCommandOptions {
   speed: string;
   seed?: string;
   dryRun: boolean;
+  json: boolean;
 }
 
 export function parseSpeed(input: string): "instant" | number {
@@ -33,16 +34,18 @@ export function registerRun(program: Command, io: Io): void {
     .option("--speed <instant|ms>", "wall-clock pause between events", "instant")
     .option("--seed <seed>", "deterministic ids and timestamps")
     .option("--dry-run", "print each envelope as JSON (one per line) instead of sending", false)
+    .option("--json", "print the full run result as one JSON document on stdout (human output goes to stderr)", false)
     .addHelpText("after", `
 Examples:
   $ rcc run scenarios/trial-churns.yaml
   $ rcc run scenarios/happy-year.yaml --to http://localhost:8787/webhook --speed 250
-  $ rcc run scenarios/billing-issue-recovers.yaml --dry-run --seed 42 | jq .event.type`)
+  $ rcc run scenarios/billing-issue-recovers.yaml --dry-run --seed 42 | jq .event.type
+  $ rcc run scenarios/happy-year.yaml --json > result.json   # CI: exit 1 on any failed expectation`)
     .action(async (file: string, opts: RunCommandOptions) => {
       const to = assertUrl(opts.to, "--to");
       const speed = parseSpeed(opts.speed);
       const loaded = loadScenarioWithSource(file);
-      const human = opts.dryRun ? io.stderr : io.stdout;
+      const human = opts.dryRun || opts.json ? io.stderr : io.stdout;
       const desc = loaded.scenario.description ? ` — ${loaded.scenario.description}` : "";
       println(human, `▶ ${bold(loaded.scenario.name)}${dim(desc)}`);
 
@@ -54,16 +57,22 @@ Examples:
         dryRun: opts.dryRun,
         source: loaded,
         onEvent: (_r, envelope) => {
-          if (opts.dryRun) println(io.stdout, JSON.stringify(envelope));
+          if (opts.dryRun && !opts.json) println(io.stdout, JSON.stringify(envelope));
         },
       });
 
       println(human, renderRunTable(result));
+      for (const line of renderFailedExpectations(result)) println(human, line);
       println(human, renderRunSummary(result));
+      if (opts.json) println(io.stdout, JSON.stringify(result, null, 2));
       if (!result.ok) {
-        throw new RccError("Scenario finished with failed deliveries.", {
-          hint: "Every event must be answered with a 2xx status. Check your handler logs, or run with --dry-run to inspect payloads.",
-        });
+        const failedExp = result.expectations.filter((e) => !e.ok).length;
+        throw new RccError(
+          failedExp > 0
+            ? `Scenario finished with ${failedExp} failed expectation${failedExp === 1 ? "" : "s"}.`
+            : "Scenario finished with failed deliveries.",
+          { hint: "Every event must be answered with a 2xx status and every expect: block must hold. Check your handler logs, or run with --dry-run to inspect payloads." },
+        );
       }
     });
 }

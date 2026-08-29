@@ -157,7 +157,8 @@ export async function runScenario(scenario: Scenario, opts: RunOptions): Promise
   }
 
   const endedMs = sim.clock.now();
-  const ok = events.every((e) => e.status === null || (e.status >= 200 && e.status < 300));
+  const expectations = evaluateExpectations(scenario, events);
+  const allDelivered = events.every((e) => e.status === null || (e.status >= 200 && e.status < 300));
   return {
     scenario: scenario.name,
     seed: opts.seed ?? null,
@@ -165,7 +166,61 @@ export async function runScenario(scenario: Scenario, opts: RunOptions): Promise
     endedAt: new Date(endedMs).toISOString(),
     virtualSpanMs: endedMs - startedMs,
     events,
-    expectations: [],
-    ok,
+    expectations,
+    ok: allDelivered && expectations.every((e) => e.ok),
   };
+}
+
+/* ------------------------------------------------------------------ expectations */
+
+const SKIPPED = "skipped";
+
+/** Pure: evaluate step-level and scenario-level `expect:` blocks against the recorded results. */
+export function evaluateExpectations(scenario: Scenario, events: readonly EventResult[]): ExpectationResult[] {
+  const out: ExpectationResult[] = [];
+  const label = (e: EventResult): string => `step ${e.step + 1} ${e.type}`;
+
+  for (const e of events) {
+    const want = scenario.steps[e.step]?.expect?.response_status;
+    if (want === undefined) continue;
+    const skipped = e.status === null;
+    out.push({
+      scope: "step",
+      step: e.step,
+      rule: "response_status",
+      expected: String(want),
+      actual: skipped ? SKIPPED : String(e.status),
+      ok: skipped || e.status === want,
+    });
+  }
+
+  const all = scenario.expect?.all_responses_status;
+  if (all !== undefined) {
+    const offenders = events.filter((e) => e.status !== null && e.status !== all);
+    const skipped = events.every((e) => e.status === null);
+    out.push({
+      scope: "scenario",
+      step: null,
+      rule: "all_responses_status",
+      expected: String(all),
+      actual: skipped ? SKIPPED : offenders.length === 0 ? String(all) : offenders.map((e) => `${e.status} (${label(e)})`).join(", "),
+      ok: skipped || offenders.length === 0,
+    });
+  }
+
+  const max = scenario.expect?.max_response_ms;
+  if (max !== undefined) {
+    const measured = events.filter((e) => e.latencyMs !== null);
+    const slowest = measured.reduce<EventResult | undefined>((acc, e) => (acc === undefined || e.latencyMs! > acc.latencyMs! ? e : acc), undefined);
+    const skipped = slowest === undefined;
+    out.push({
+      scope: "scenario",
+      step: null,
+      rule: "max_response_ms",
+      expected: `≤ ${max} ms`,
+      actual: skipped ? SKIPPED : `${slowest.latencyMs} ms (${label(slowest)})`,
+      ok: skipped || slowest.latencyMs! <= max,
+    });
+  }
+  return out;
 }
