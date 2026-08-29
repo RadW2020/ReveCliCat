@@ -54,4 +54,18 @@ Behaviour: `POST` on any path → log line `HH:MM:SS  RENEWAL        app_user_id
 See `specs/F3-scenarios.md` and `specs/F4-ci.md`.
 
 ## `rcc init` (T-051)
-Creates `reveclicat.config.json` + `scenarios/` (6 examples) in cwd; refuses to overwrite unless `--force`.
+
+Creates in the current directory:
+- `reveclicat.config.json` — `{ "to": "http://localhost:3000/webhook", "store": "app_store", "environment": "SANDBOX" }` (+ optional `"authHeader"`).
+- `scenarios/` — the six shipped examples, copied from the installed package.
+
+Refuses to overwrite existing files (lists them, suggests `--force`); `--force` overwrites. Prints what it created and the next command to try (`rcc run scenarios/trial-churns.yaml`). Exit 1 if nothing could be written.
+
+## Config file (T-051)
+
+`reveclicat.config.json` in the cwd, validated with zod (unknown keys → error naming the key):
+
+```json
+{ "to": "http://localhost:3000/webhook", "authHeader": "Bearer dev", "store": "app_store", "environment": "SANDBOX" }
+```
+Precedence for `send` and `run`: **flag > config > built-in default**. `--help` shows the built-in default and mentions the config file. Malformed JSON or invalid values → `RccError` with the file path.

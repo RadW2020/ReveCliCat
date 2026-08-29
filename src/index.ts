@@ -21,3 +21,4 @@ export { Subscriber, PrematureEventError, type SubscriberOptions } from "./core/
 export { transition, legalEvents, IllegalTransitionError, type SubscriptionState } from "./core/state-machine.js";
 export { runScenario, createSimulation, type RunResult, type RunOptions, type EventResult } from "./core/engine.js";
 export { postEvent } from "./core/http.js";
+export { loadConfig, ConfigSchema, type Config } from "./core/config.js";

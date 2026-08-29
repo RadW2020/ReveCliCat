@@ -134,3 +134,10 @@ Diary of work sessions. Newest at the bottom. Format: date · ticket · what was
 **What works:** `expect:` blocks (step/scenario), exit codes 0/1, `--json` single-document output, a copy-pasteable Express handler that validates/authenticates/dedupes, and a GitHub Actions workflow that wires them together (rehearsed locally).
 **Debt:** the workflow was validated by parsing + local shell rehearsal, not by an actual Actions run (no remote CI in v0.1 scope — pushing to GitHub is a human step). `max_response_ms` is a per-event max, not a percentile.
 **Next:** Epic 5 — README (T-050), `rcc init` + LICENSE/CONTRIBUTING/CHANGELOG 0.1.0 (T-051), final polish (T-052).
+
+## 2026-08-29 · T-051 · `rcc init`, config defaults, LICENSE, CONTRIBUTING, CHANGELOG 0.1.0
+- Taken before T-050 so the README can document `rcc init` and the config file. Spec: init/config sections in `specs/F2-commands.md` (precedence flag > config > default).
+- Tests first (11): `loadConfig` (missing → `{}`, valid, malformed JSON / unknown key / bad enum naming the file), `resolveDefaults` precedence, `rcc init` (config + six scenarios + next-step hint; refuses to overwrite, `--force`), config feeding `send` and `run` (flags win), broken config reported with its path. vitest switched to `pool: "forks"` so tests may `process.chdir`.
+- Impl: `src/core/config.ts` (`ConfigSchema`, `loadConfig`, `resolveDefaults`, `packageRoot()` walks up to the `reveclicat` package.json so scenarios copy from src/, dist/ or node_modules), `src/commands/init.ts`, `send`/`run` resolve defaults; `--help` texts mention the config file. `LICENSE` (MIT), `CONTRIBUTING.md`, `CHANGELOG.md` cut as `0.1.0`.
+- Terminal: `rcc init` in an empty dir → 7 files + next command; second run → refuses with `--force` hint, exit 1.
+- Gates: typecheck ✓ · lint ✓ · tests 172/172 ✓.

@@ -1,5 +1,6 @@
 import type { Command } from "commander";
 import { RccError } from "../core/errors.js";
+import { CONFIG_FILE, DEFAULT_TARGET, loadConfig, resolveDefaults } from "../core/config.js";
 import { applyStep, createSimulation, preludeFor, spanOf } from "../core/engine.js";
 import { assertUrl, postEvent } from "../core/http.js";
 import { println, type Io } from "../core/io.js";
@@ -7,15 +8,15 @@ import { green, red, dim } from "../core/colors.js";
 import { CLI_STORES, ENVIRONMENTS, EVENT_TYPES, type CliStore, type Environment, type EventType } from "../schemas/common.js";
 import type { WebhookEnvelope } from "../schemas/index.js";
 
-export const DEFAULT_TARGET = "http://localhost:3000/webhook";
+export { DEFAULT_TARGET };
 
 export interface SendOptions {
-  to: string;
-  store: string;
+  to?: string | undefined;
+  store?: string | undefined;
   user?: string;
   product: string;
-  authHeader?: string;
-  environment: string;
+  authHeader?: string | undefined;
+  environment?: string | undefined;
   set?: string[] | undefined;
   seed?: string;
   dryRun?: boolean;
@@ -77,8 +78,8 @@ export function buildSingleEvent(type: EventType, opts: SendOptions): WebhookEnv
     appUserId: opts.user ?? "auto",
     productId: opts.product,
     period: "P1M",
-    store: parseStore(opts.store),
-    environment: parseEnvironment(opts.environment),
+    store: parseStore(opts.store ?? "app_store"),
+    environment: parseEnvironment(opts.environment ?? "SANDBOX"),
   };
   // Unseeded: start in the past so the final event lands at ≈ now.
   const startAt = seed === undefined ? Date.now() - spanOf(prelude, Date.now()) : undefined;
@@ -93,12 +94,12 @@ export function registerSend(program: Command, io: Io): void {
     .command("send")
     .argument("<EVENT_TYPE>", `event to send: ${EVENT_TYPES.join(" | ")}`)
     .description("Send a single, schema-valid RevenueCat webhook event to your endpoint.")
-    .option("--to <url>", "target URL", DEFAULT_TARGET)
-    .option("--store <store>", `store (${CLI_STORES.join(" | ")})`, "app_store")
+    .option("--to <url>", `target URL (default: ${DEFAULT_TARGET}, or "to" in ${CONFIG_FILE})`)
+    .option("--store <store>", `store: ${CLI_STORES.join(" | ")} (default: app_store, or "store" in ${CONFIG_FILE})`)
     .option("--user <app_user_id>", "app_user_id (default: generated $RCAnonymousID)")
     .option("--product <product_id>", "product_id", "com.example.premium.monthly")
-    .option("--auth-header <value>", "value sent as the Authorization header")
-    .option("--environment <env>", `${ENVIRONMENTS.join(" | ")}`, "SANDBOX")
+    .option("--auth-header <value>", `value sent as the Authorization header (default: "authHeader" in ${CONFIG_FILE})`)
+    .option("--environment <env>", `${ENVIRONMENTS.join(" | ")} (default: SANDBOX, or "environment" in ${CONFIG_FILE})`)
     .option("--set <key=value>", "override a payload field (repeatable, dot paths allowed)", (v: string, acc: string[] | undefined) => [...(acc ?? []), v])
     .option("--seed <seed>", "deterministic ids and timestamps")
     .option("--dry-run", "print the payload instead of sending it", false)
@@ -109,13 +110,14 @@ Examples:
   $ rcc send CANCELLATION --set cancel_reason=BILLING_ERROR --dry-run | jq .event.type`)
     .action(async (eventType: string, opts: SendOptions) => {
       const type = parseEventType(eventType);
-      const to = assertUrl(opts.to, "--to");
-      const envelope = buildSingleEvent(type, opts);
+      const d = resolveDefaults(opts, loadConfig());
+      const to = assertUrl(d.to, "--to");
+      const envelope = buildSingleEvent(type, { ...opts, to, store: d.store, environment: d.environment, authHeader: d.authHeader });
       if (opts.dryRun) {
         println(io.stdout, JSON.stringify(envelope, null, 2));
         return;
       }
-      const res = await postEvent(to, envelope, { authHeader: opts.authHeader });
+      const res = await postEvent(to, envelope, { authHeader: d.authHeader });
       const ok = res.status >= 200 && res.status < 300;
       const mark = ok ? green("✔") : red("✖");
       println(io.stdout, `${mark} ${type.padEnd(16)} → ${to}  ${res.status}  ${dim(`(${res.latencyMs} ms)`)}`);

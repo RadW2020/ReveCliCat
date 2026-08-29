@@ -6,11 +6,12 @@ import { println, type Io } from "../core/io.js";
 import { renderFailedExpectations, renderRunSummary, renderRunTable } from "../core/output.js";
 import { loadScenarioWithSource } from "../core/scenario.js";
 import { bold, dim } from "../core/colors.js";
-import { DEFAULT_TARGET, parseSeed } from "./send.js";
+import { parseSeed } from "./send.js";
+import { CONFIG_FILE, DEFAULT_TARGET, loadConfig, resolveDefaults } from "../core/config.js";
 
 export interface RunCommandOptions {
-  to: string;
-  authHeader?: string;
+  to?: string | undefined;
+  authHeader?: string | undefined;
   speed: string;
   seed?: string;
   dryRun: boolean;
@@ -29,8 +30,8 @@ export function registerRun(program: Command, io: Io): void {
     .command("run")
     .argument("<scenario.yaml>", "scenario file to execute")
     .description("Run a scenario: advance a virtual clock, emit a coherent event sequence and deliver it over HTTP.")
-    .option("--to <url>", "target URL", DEFAULT_TARGET)
-    .option("--auth-header <value>", "value sent as the Authorization header")
+    .option("--to <url>", `target URL (default: ${DEFAULT_TARGET}, or "to" in ${CONFIG_FILE})`)
+    .option("--auth-header <value>", `value sent as the Authorization header (default: "authHeader" in ${CONFIG_FILE})`)
     .option("--speed <instant|ms>", "wall-clock pause between events", "instant")
     .option("--seed <seed>", "deterministic ids and timestamps")
     .option("--dry-run", "print each envelope as JSON (one per line) instead of sending", false)
@@ -42,7 +43,8 @@ Examples:
   $ rcc run scenarios/billing-issue-recovers.yaml --dry-run --seed 42 | jq .event.type
   $ rcc run scenarios/happy-year.yaml --json > result.json   # CI: exit 1 on any failed expectation`)
     .action(async (file: string, opts: RunCommandOptions) => {
-      const to = assertUrl(opts.to, "--to");
+      const d = resolveDefaults(opts, loadConfig());
+      const to = assertUrl(d.to, "--to");
       const speed = parseSpeed(opts.speed);
       const loaded = loadScenarioWithSource(file);
       const human = opts.dryRun || opts.json ? io.stderr : io.stdout;
@@ -51,7 +53,7 @@ Examples:
 
       const result = await runScenario(loaded.scenario, {
         to,
-        authHeader: opts.authHeader,
+        authHeader: d.authHeader,
         speed,
         seed: parseSeed(opts.seed),
         dryRun: opts.dryRun,

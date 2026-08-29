@@ -34,7 +34,7 @@ Legend: 🧊 Icebox · 📋 Backlog · 🔨 In progress · ✅ Done · ⛔ Block
 | T-041 | `examples/express-handler.ts` | E4 | ✅ |
 | T-042 | `examples/github-action.yml` | E4 | ✅ |
 | T-050 | README (English) | E5 | 📋 |
-| T-051 | `rcc init`, LICENSE, CONTRIBUTING, CHANGELOG 0.1.0 | E5 | 📋 |
+| T-051 | `rcc init`, LICENSE, CONTRIBUTING, CHANGELOG 0.1.0 | E5 | ✅ |
 | T-052 | Final polish: errors, `--help`, flag consistency | E5 | 📋 |
 
 ---
@@ -292,6 +292,7 @@ _(none)_
 - T-040
 - T-041
 - T-042
+- T-051
 
 ## Icebox
 
