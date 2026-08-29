@@ -2,6 +2,8 @@
 
 # ReveCliCat 🐱 `rcc`
 
+[![ci](https://github.com/RadW2020/ReveCliCat/actions/workflows/ci.yml/badge.svg)](https://github.com/RadW2020/ReveCliCat/actions/workflows/ci.yml) [![npm](https://img.shields.io/npm/v/reveclicat)](https://www.npmjs.com/package/reveclicat) [![license: MIT](https://img.shields.io/badge/license-MIT-blue.svg)](LICENSE)
+
 **Deterministic time travel for subscriptions: simulate a year of a subscriber's life in 30 seconds, locally and in CI, without touching Apple's sandbox.**
 
 ReveCliCat is a small TypeScript CLI that generates RevenueCat-shaped webhook events, chains them through a subscription state machine so they stay coherent (same IDs, forward-moving timestamps, fields that mutate the way they really do), and POSTs them to your endpoint — `localhost` included, no tunnel needed. Think of it as the Stripe CLI that RevenueCat does not have.

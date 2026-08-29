@@ -22,7 +22,9 @@
   "files": [
     "dist",
     "scenarios",
+    "examples",
     "README.md",
+    "CHANGELOG.md",
     "LICENSE"
   ],
   "scripts": {
@@ -32,7 +34,8 @@
     "test:watch": "vitest",
     "lint": "eslint .",
     "typecheck": "tsc --noEmit",
-    "check": "npm run typecheck && npm run lint && npm test"
+    "check": "npm run typecheck && npm run lint && npm test",
+    "prepublishOnly": "npm run check && npm run build"
   },
   "keywords": [
     "revenuecat",
@@ -44,7 +47,7 @@
   ],
   "repository": {
     "type": "git",
-    "url": "https://github.com/RadW2020/ReveCliCat.git"
+    "url": "git+https://github.com/RadW2020/ReveCliCat.git"
   },
   "dependencies": {
     "commander": "15.0.0",
@@ -62,5 +65,10 @@
     "typescript": "6.0.3",
     "typescript-eslint": "8.68.0",
     "vitest": "4.1.11"
-  }
+  },
+  "homepage": "https://github.com/RadW2020/ReveCliCat#readme",
+  "bugs": {
+    "url": "https://github.com/RadW2020/ReveCliCat/issues"
+  },
+  "author": "RadW2020"
 }

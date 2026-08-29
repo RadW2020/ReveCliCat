@@ -1,4 +1,4 @@
-# F6 — Webhook inbox & `rcc tail` (v0.2)
+# F6 — Webhook inbox & `rcc tail` (shipped in 0.1.0)
 
 > Receive **real** RevenueCat webhooks on `localhost` — the "receive" half of the Stripe-CLI analogy. v0.1 only generates synthetic events; this epic adds a small, self-hostable relay so real dashboard/sandbox/production events reach a developer's machine.
 

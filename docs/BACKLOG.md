@@ -36,12 +36,12 @@ Legend: 🧊 Icebox · 📋 Backlog · 🔨 In progress · ✅ Done · ⛔ Block
 | T-050 | README (English) | E5 | ✅ |
 | T-051 | `rcc init`, LICENSE, CONTRIBUTING, CHANGELOG 0.1.0 | E5 | ✅ |
 | T-052 | Final polish: errors, `--help`, flag consistency | E5 | ✅ |
-| T-060 | Spec F6 (inbox + tail) and ADR-004 | E6 (v0.2) | ✅ |
-| T-061 | `rcc tail --smee` — receive real webhooks via smee.io, print & forward to localhost | E6 (v0.2) | ✅ |
-| T-062 | `rcc inbox` self-hosted server + `rcc tail --inbox` | E6 (v0.2) | ✅ |
-| T-063 | Capture real events via smee, promote fixtures | E6 (v0.2) | ✅ |
-| T-064 | Lifecycle schemas: `Always` fields may be null (real captures) | E6 (v0.2) | ✅ |
-| T-065 | Tolerate unknown event types in listen/tail/inbox (forward compatibility) | E6 (v0.2) | ✅ |
+| T-060 | Spec F6 (inbox + tail) and ADR-004 | E6 | ✅ |
+| T-061 | `rcc tail --smee` — receive real webhooks via smee.io, print & forward to localhost | E6 | ✅ |
+| T-062 | `rcc inbox` self-hosted server + `rcc tail --inbox` | E6 | ✅ |
+| T-063 | Capture real events via smee, promote fixtures | E6 | ✅ |
+| T-064 | Lifecycle schemas: `Always` fields may be null (real captures) | E6 | ✅ |
+| T-065 | Tolerate unknown event types in listen/tail/inbox (forward compatibility) | E6 | ✅ |
 
 ---
 
@@ -277,7 +277,7 @@ Local HTTP receiver that pretty-prints incoming webhook events.
 
 ---
 
-## Epic 6 — Webhook inbox & tail (v0.2)
+## Epic 6 — Webhook inbox & tail (shipped in 0.1.0)
 
 > Added 2026-08-29 after v0.1 closed. Motivation: receiving *real* RevenueCat webhooks on localhost (the Stripe-CLI "listen" half) and a durable way to capture payloads for fidelity (T-004). Deployment model fixed by ADR-004: self-hosted, no data custody.
 
