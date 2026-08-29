@@ -50,8 +50,17 @@ export const EXPIRATION_REASONS = [...CANCEL_REASONS, "SUBSCRIPTION_PAUSED"] as 
 export type ExpirationReason = (typeof EXPIRATION_REASONS)[number];
 
 /** CLI-facing store names (lowercase) → RevenueCat `store` values. Generator supports these; receivers accept every store. */
-export const CLI_STORES = ["app_store", "play_store"] as const;
+export const CLI_STORES = ["app_store", "play_store", "stripe"] as const;
 export type CliStore = (typeof CLI_STORES)[number];
-export const CLI_STORE_TO_STORE: Record<CliStore, Store> = { app_store: "APP_STORE", play_store: "PLAY_STORE" };
+export const CLI_STORE_TO_STORE: Record<CliStore, Store> = { app_store: "APP_STORE", play_store: "PLAY_STORE", stripe: "STRIPE" };
 /** Default product id per store (Play uses RevenueCat's `<subscription_id>:<base_plan_id>` format). */
-export const DEFAULT_PRODUCT_ID: Record<CliStore, string> = { app_store: "com.example.premium.monthly", play_store: "com.example.premium:monthly" };
+export const DEFAULT_PRODUCT_ID: Record<CliStore, string> = {
+  app_store: "com.example.premium.monthly",
+  play_store: "com.example.premium:monthly",
+  stripe: "prod_RccPremiumMonthly",
+};
+/** Events a store never emits (official store-compatibility table, docs/payload-sources.md). */
+export const UNSUPPORTED_EVENTS_BY_STORE: Partial<Record<CliStore, readonly EventType[]>> = {
+  stripe: ["UNCANCELLATION", "TEST"],
+};
+export const STORE_LABEL: Record<CliStore, string> = { app_store: "App Store", play_store: "Google Play", stripe: "Stripe" };

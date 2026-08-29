@@ -92,10 +92,10 @@ describe("T-072 play_store on the surface", () => {
   it("parseStore accepts play_store and lists both stores on error", () => {
     expect(parseStore("play_store")).toBe("play_store");
     try {
-      parseStore("stripe");
+      parseStore("amazon");
       throw new Error("expected");
     } catch (e) {
-      expect((e as RccError).message).toMatch(/app_store, play_store/);
+      expect((e as RccError).message).toMatch(/app_store, play_store, stripe/);
     }
   });
 

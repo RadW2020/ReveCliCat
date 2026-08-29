@@ -232,3 +232,19 @@ Diary of work sessions. Newest at the bottom. Format: date · ticket · what was
 
 ## 2026-08-29 · 0.2.0 released
 - First release through the new flow end to end: CHANGELOG cut → `npm version minor` → `git push --follow-tags` → `release.yml` published `reveclicat@0.2.0` via trusted publishing; GitHub release created. Verified from the registry: `rcc send RENEWAL --store play_store --dry-run` → `GPA.….. 0`.
+
+## 2026-08-29 · T-080 · Real Stripe lifecycle captured (7 events)
+- Maintainer connected a Stripe sandbox to the project (Web → Stripe config, app `app5d1101a0b8`) and put the Stripe test key in `.env`. Everything else by API: Stripe product/price, **test clock**, customer (`pm_card_visa`), subscription with 7-day trial; price imported into RevenueCat (v2) and attached to `premium`; subscription linked with `POST /v1/receipts` (`X-Platform: stripe`) — the secret key is rejected there, the Stripe app's *public* key (fetched via v2 `public_api_keys`) works.
+- RevenueCat did not pick up Stripe's test-clock events on its own within minutes (docs: subscriptions are refreshed "up to two hours"); re-posting the same `fetch_token` forces the refresh and the webhooks arrive within seconds — used as the sync lever for each step.
+- Sequence captured: `INITIAL_PURCHASE` (TRIAL) → clock +8d → `RENEWAL` (conversion) → failing card + clock +1m → `BILLING_ISSUE` + `CANCELLATION`(`BILLING_ERROR`) → pay invoice → `RENEWAL` (recovery) → cancel at period end → `CANCELLATION`(`UNSUBSCRIBE`) → clock past period → `EXPIRATION`(`UNSUBSCRIBE`). All accepted 200 by our listener (schemas already right after T-064/T-065).
+- Findings that shape the generator (table in `payload-sources.md`): constant `si_…` transaction id, `prod_…` product id, `renewal_number` counting the failed attempt, grace `null` with expiration pre-extended, Stripe money fields (0/1/0), `country_code` null. Spec `F8-stripe.md` written from this evidence (T-081). GitHub About filled (description, npm homepage, topics).
+
+## 2026-08-29 · T-082/T-083 · Stripe in the generator
+- Tests first (11): si_ ids constant across the lifecycle, `renewal_number` 1→2→3 with the failed attempt counted, BILLING_ISSUE pre-extends expiration with grace null, recovery keeps expiration/renewal_number, UNCANCELLATION/TEST illegal with "Stripe does not emit …", resubscription mints a new id, App Store/Play untouched (no `renewal_number`), schema validity + determinism, surface (`parseStore`, scenario, examples/init → 8 scenarios).
+- Fidelity fix found by the real data: the recovery `RENEWAL` arrived from the **cancelled** state (after `CANCELLATION(BILLING_ERROR)`), which the state machine forbade. Docs S4 also describe App Store `CANCELLATION` → `RENEWAL`. Added `cancelled_pending_expiration —RENEWAL→ active`; F1 spec updated; the "8 rules" tests still hold. Stripe recovery semantics keyed on an open billing retry, not on the state.
+- Impl: `UNSUPPORTED_EVENTS_BY_STORE` + store dimension in `legalEvents`/`transition`/`IllegalTransitionError`; Stripe branches in `Subscriber` (ids, `renewal_number`, billing-issue extension, money fields, `country_code: null`); `scenarios/stripe-billing-issue-recovers.yaml`; README, CHANGELOG, Icebox.
+- Gates: typecheck ✓ · lint ✓ · tests 245/245 ✓.
+
+### Epic 8 summary — Stripe
+**What works:** `--store stripe` end to end, with every generator rule traceable to a real captured event rather than to memory; receivers unchanged (already accepted these payloads). The capture tooling (`rcc tail --smee`) plus the Stripe test-clock + `/v1/receipts` resync lever turned a "maybe next quarter" store into an afternoon.
+**Debt:** RevenueCat Billing (`RC_BILLING`) not captured; Stripe test data left in the sandbox is deleted with the test clock; RevenueCat customer `rcc_stripe_test` and product `prod592e84448c` remain in `mytestapp` (harmless).

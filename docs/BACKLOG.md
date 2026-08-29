@@ -46,10 +46,10 @@ Legend: 🧊 Icebox · 📋 Backlog · 🔨 In progress · ✅ Done · ⛔ Block
 | T-070 | Spec F7: Google Play in the generator | E7 | ✅ |
 | T-071 | `play_store`: Google-shaped ids and defaults in `Subscriber` | E7 | ✅ |
 | T-072 | `play_store` on the CLI surface: `--store`, scenarios, config, example, docs | E7 | ✅ |
-| T-080 | Capture real Stripe events (test mode + test clocks) → fixtures | E8 | 🔨 |
-| T-081 | Spec F8: Stripe in the generator, store-specific legal events | E8 | 📋 |
-| T-082 | `stripe` store in `Subscriber` + state machine per store | E8 | 📋 |
-| T-083 | `stripe` on the CLI surface: `--store`, scenarios, example, docs | E8 | 📋 |
+| T-080 | Capture real Stripe events (test mode + test clocks) → fixtures | E8 | ✅ |
+| T-081 | Spec F8: Stripe in the generator, store-specific legal events | E8 | ✅ |
+| T-082 | `stripe` store in `Subscriber` + state machine per store | E8 | ✅ |
+| T-083 | `stripe` on the CLI surface: `--store`, scenarios, example, docs | E8 | ✅ |
 
 ---
 
@@ -400,6 +400,10 @@ _(none)_
 - T-070
 - T-071
 - T-072
+- T-080
+- T-081
+- T-082
+- T-083
 
 ## Icebox
 
@@ -408,7 +412,7 @@ Not for v0.1. Each line has its justification.
 - Hosted public webhook relay (smee.io model) and multi-tenant persistent inbox — ADR-004: self-host first; operating other people's payloads needs a privacy/TOS story and real demand.
 - Payload redaction tooling for promoting captured events to fixtures — manual for v0.2.
 - Non-subscription products / `NON_RENEWING_PURCHASE` generation — accepted by receivers since T-065, not modelled by the state machine (promotional grants emit it).
-- Stripe / Amazon / Roku stores — v0.1 proves the model with `app_store` (Google Play added in 0.2.0, Epic 7); other stores add store-specific fields we have not verified.
+- Amazon / Roku / RevenueCat Billing stores — App Store (0.1), Google Play (0.2.0) and Stripe (0.3.0, real capture) are modelled; the others add store-specific fields we have not verified.
 - Integrated tunnel (ngrok-like) — main use case is local generation; no tunnel needed.
 - Web UI — CLI is the product; a UI would dilute focus.
 - Hosted mode — no infra in v0.1.

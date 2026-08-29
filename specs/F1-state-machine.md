@@ -44,12 +44,15 @@ States: `none`, `trial`, `active`, `cancelled_pending_expiration`, `billing_issu
 | active | BILLING_ISSUE | billing_issue |
 | active | EXPIRATION | expired |
 | cancelled_pending_expiration | UNCANCELLATION | state before cancellation (trial or active) |
+| cancelled_pending_expiration | RENEWAL | active (recovery after a `BILLING_ERROR` cancellation — real Stripe capture; App Store "CANCELLATION followed by a RENEWAL" near trial end — docs S4) |
 | cancelled_pending_expiration | EXPIRATION | expired |
 | billing_issue | RENEWAL | active (recovery) |
 | billing_issue | EXPIRATION | expired (churn) |
 | billing_issue | CANCELLATION | cancelled_pending_expiration |
 | expired | INITIAL_PURCHASE | active (resubscribe, no trial) |
 | any | TEST | unchanged |
+
+Store dimension (0.3.0): `legalEvents(state, store)` / `transition(state, event, { store })` drop the events a store never emits (official compatibility table): Stripe → no `UNCANCELLATION`, no `TEST`.
 
 Anything else → `IllegalTransitionError` naming the current state, the attempted event and the legal events from that state. The transition function is pure: `transition(state, event, ctx) → nextState` with `ctx = { hasTrial, resumeState }`.
 

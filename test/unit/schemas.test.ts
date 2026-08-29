@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { readFileSync } from "node:fs";
+import { readFileSync, readdirSync } from "node:fs";
 import { join } from "node:path";
 import {
   BillingIssueEventSchema,
@@ -142,5 +142,21 @@ describe("T-064 real lifecycle payloads (store PROMOTIONAL) validate", () => {
     expect(r.data.event.is_family_share).toBeNull();
     expect(r.data.event.country_code).toBeNull();
     expect(r.data.event.store).toBe("PROMOTIONAL");
+  });
+});
+
+describe("T-080 real Stripe lifecycle payloads validate", () => {
+  const files = readdirSync(join(FIX, "real")).filter((f) => f.endsWith(".stripe.json")).sort();
+  it("has the seven captured Stripe fixtures", () => {
+    expect(files).toHaveLength(7);
+  });
+  it.each(files)("%s", (file) => {
+    const real = JSON.parse(readFileSync(join(FIX, `real/${file}`), "utf8")) as WebhookEnvelope;
+    const r = WebhookEnvelopeSchema.safeParse(real);
+    expect(r.success, JSON.stringify(r.success ? null : r.error.issues.slice(0, 4))).toBe(true);
+    if (!r.success) return;
+    expect(r.data.event.store).toBe("STRIPE");
+    expect(r.data.event.transaction_id).toBe("si_VACkn6IOj7aBN6");
+    expect(r.data.event.original_transaction_id).toBe("si_VACkn6IOj7aBN6");
   });
 });

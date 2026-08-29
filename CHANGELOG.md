@@ -4,6 +4,10 @@ All notable changes to this project are documented here. Format based on [Keep a
 
 ## [Unreleased]
 
+### Added
+- Stripe in the generator: `--store stripe` / `subscriber.store: stripe` — constant `si_…` transaction id, `prod_…` product id default, `renewal_number` on every event, `BILLING_ISSUE` with the period pre-extended and `grace_period_expiration_at_ms: null`, recovery `RENEWAL` that does not re-extend, Stripe money fields (commission 0, takehome 1), `country_code: null`. `UNCANCELLATION` and `TEST` are rejected for Stripe with a store-specific message (official compatibility table). All rules derived from a real captured lifecycle (`test/fixtures/events/real/*.stripe.json`). New example `scenarios/stripe-billing-issue-recovers.yaml`. (T-080–T-083)
+- State machine: `legalEvents(state, store)` / `transition(..., { store })` — legality now has a store dimension. (T-082)
+
 ## [0.2.0] — 2026-08-29
 
 ### Added

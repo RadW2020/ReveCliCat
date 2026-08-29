@@ -1,0 +1,19 @@
+name: stripe-billing-issue-recovers
+description: Stripe subscription — trial converts, the next charge fails (RevenueCat sends BILLING_ISSUE and a BILLING_ERROR cancellation together), then the customer pays and recovers
+subscriber:
+  app_user_id: auto
+  store: stripe                        # si_… ids that never change; renewal_number on every event; no UNCANCELLATION/TEST
+  product_id: prod_RccPremiumMonthly   # Stripe Product id
+  period: P1M
+  trial: P1W
+steps:
+  - event: INITIAL_PURCHASE      # trial (renewal_number 1)
+  - advance: P1W
+  - event: RENEWAL               # conversion (renewal_number 2)
+  - advance: P1M
+  - event: BILLING_ISSUE         # failed attempt: expiration already extended, grace_period_expiration_at_ms null
+  - event: CANCELLATION          # dispatched by RevenueCat together with the billing issue (cancel_reason BILLING_ERROR)
+  - advance: P3D
+  - event: RENEWAL               # invoice paid: recovery, expiration unchanged
+expect:
+  all_responses_status: 200

@@ -26,6 +26,7 @@ describe("T-010 legal transitions", () => {
     ["cancelled_pending_expiration", "UNCANCELLATION", "active", { resumeState: "active" }],
     ["cancelled_pending_expiration", "UNCANCELLATION", "trial", { resumeState: "trial" }],
     ["cancelled_pending_expiration", "EXPIRATION", "expired"],
+    ["cancelled_pending_expiration", "RENEWAL", "active"],
     ["billing_issue", "RENEWAL", "active"],
     ["billing_issue", "EXPIRATION", "expired"],
     ["billing_issue", "CANCELLATION", "cancelled_pending_expiration"],
@@ -50,7 +51,6 @@ describe("T-010 illegal transitions", () => {
     ["trial", "INITIAL_PURCHASE"],
     ["expired", "RENEWAL"],
     ["expired", "EXPIRATION"],
-    ["cancelled_pending_expiration", "RENEWAL"],
     ["cancelled_pending_expiration", "CANCELLATION"],
     ["billing_issue", "BILLING_ISSUE"],
     ["billing_issue", "UNCANCELLATION"],
@@ -81,7 +81,7 @@ describe("T-010 legalEvents", () => {
     expect(legalEvents("none")).toEqual(["INITIAL_PURCHASE", "TEST"]);
     expect(legalEvents("trial")).toEqual(["RENEWAL", "CANCELLATION", "BILLING_ISSUE", "EXPIRATION", "TEST"]);
     expect(legalEvents("active")).toEqual(["RENEWAL", "CANCELLATION", "BILLING_ISSUE", "EXPIRATION", "TEST"]);
-    expect(legalEvents("cancelled_pending_expiration")).toEqual(["UNCANCELLATION", "EXPIRATION", "TEST"]);
+    expect(legalEvents("cancelled_pending_expiration")).toEqual(["UNCANCELLATION", "RENEWAL", "EXPIRATION", "TEST"]);
     expect(legalEvents("billing_issue")).toEqual(["RENEWAL", "EXPIRATION", "CANCELLATION", "TEST"]);
     expect(legalEvents("expired")).toEqual(["INITIAL_PURCHASE", "TEST"]);
   });

@@ -76,6 +76,8 @@ export class Subscriber {
   private readonly cliStore: CliStore;
   /** Play: number of renewals on the current order (drives the `..N` suffix). */
   private renewalIndex = 0;
+  /** A BILLING_ISSUE is open (until a RENEWAL recovers it or the subscription expires). */
+  private billingRetry = false;
   private readonly environment: Environment;
   private readonly price: number;
   private readonly currency: string;
@@ -124,7 +126,7 @@ export class Subscriber {
   /** Emit an event: check legality, time guards, build + validate payload, commit state. */
   emit(type: EventType, overrides: Record<string, unknown> = {}): Event {
     const from = this._state;
-    const next = transition(from, type, { hasTrial: this.trial !== undefined, resumeState: this.resumeState });
+    const next = transition(from, type, { hasTrial: this.trial !== undefined, resumeState: this.resumeState, store: this.cliStore });
     const now = this.deps.clock.now();
 
     if (type === "EXPIRATION") {
@@ -151,6 +153,8 @@ export class Subscriber {
       this.periodType = draft.periodType;
       this.gracePeriodExpirationAtMs = draft.gracePeriodExpirationAtMs;
       this.renewalIndex = draft.renewalIndex;
+      if (type === "BILLING_ISSUE") this.billingRetry = true;
+      if (type === "RENEWAL" || type === "EXPIRATION" || type === "INITIAL_PURCHASE") this.billingRetry = false;
       if (type === "CANCELLATION") this.resumeState = from === "trial" ? "trial" : "active";
       this._state = next;
     }
@@ -167,16 +171,25 @@ export class Subscriber {
     return s;
   }
 
-  /** A brand-new order/transaction id in the store's format (see specs/F7-google-play.md). */
+  private alnum(n: number): string {
+    const A = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
+    let s = "";
+    for (let i = 0; i < n; i++) s += A[this.deps.rng.int(A.length)];
+    return s;
+  }
+
+  /** A brand-new order/transaction id in the store's format (specs/F7-google-play.md, specs/F8-stripe.md). */
   private newTransactionId(): string {
+    if (this.cliStore === "stripe") return `si_${this.alnum(14)}`;
     if (this.cliStore === "play_store") {
       return `GPA.${this.digits(4)}-${this.digits(4)}-${this.digits(4)}-${this.digits(5)}`;
     }
     return String(1 + this.deps.rng.int(9)) + this.digits(15); // App Store-like 16-digit numeric string
   }
 
-  /** Renewal id: Play appends `..N` to the original order id; App Store issues a fresh transaction id. */
+  /** Renewal id: Play appends `..N`; Stripe keeps the subscription item id; App Store issues a fresh transaction id. */
   private renewalTransactionId(originalId: string | undefined, index: number): string {
+    if (this.cliStore === "stripe" && originalId !== undefined) return originalId;
     if (this.cliStore === "play_store" && originalId !== undefined) return `${originalId}..${index}`;
     return this.newTransactionId();
   }
@@ -195,8 +208,8 @@ export class Subscriber {
       case "INITIAL_PURCHASE": {
         const startsTrial = from === "none" && this.trial !== undefined;
         d.transactionId = this.newTransactionId();
-        // App Store keeps the original transaction id across resubscriptions; Play starts a new order (new purchase token).
-        if (this.cliStore === "play_store") d.originalTransactionId = d.transactionId;
+        // App Store keeps the original transaction id across resubscriptions; Play and Stripe start a new order/subscription.
+        if (this.cliStore !== "app_store") d.originalTransactionId = d.transactionId;
         else d.originalTransactionId ??= d.transactionId;
         d.renewalIndex = 0;
         d.purchasedAtMs = now;
@@ -206,8 +219,14 @@ export class Subscriber {
         break;
       }
       case "RENEWAL": {
-        const start = d.expirationAtMs ?? now;
         d.transactionId = this.renewalTransactionId(d.originalTransactionId, d.renewalIndex);
+        if (this.cliStore === "stripe" && this.billingRetry) {
+          // Stripe recovery: the period was already extended (and counted) at the failed attempt.
+          d.periodType = "NORMAL";
+          d.gracePeriodExpirationAtMs = null;
+          break;
+        }
+        const start = d.expirationAtMs ?? now;
         d.renewalIndex += 1;
         d.purchasedAtMs = start;
         d.expirationAtMs = addDuration(start, this.period);
@@ -216,7 +235,14 @@ export class Subscriber {
         break;
       }
       case "BILLING_ISSUE":
-        d.gracePeriodExpirationAtMs = addDuration(now, this.grace);
+        if (this.cliStore === "stripe") {
+          // RevenueCat registers the Stripe invoice when created: expiration already extended, no grace field, renewal counted.
+          d.expirationAtMs = addDuration(d.expirationAtMs ?? now, this.period);
+          d.renewalIndex += 1;
+          d.gracePeriodExpirationAtMs = null;
+        } else {
+          d.gracePeriodExpirationAtMs = addDuration(now, this.grace);
+        }
         break;
       case "TEST":
         if (from === "none") {
@@ -235,6 +261,7 @@ export class Subscriber {
   private buildPayload(type: EventType, from: SubscriptionState, now: number, d: PeriodDraft): Record<string, unknown> {
     const isPurchase = type === "INITIAL_PURCHASE" || type === "RENEWAL" || type === "TEST";
     const price = isPurchase && d.periodType !== "TRIAL" ? this.price : 0;
+    const stripe = this.cliStore === "stripe";
     const payload: Record<string, unknown> = {
       type,
       id: this.deps.rng.uuid(),
@@ -255,16 +282,18 @@ export class Subscriber {
       transaction_id: d.transactionId,
       original_transaction_id: d.originalTransactionId,
       is_family_share: false,
-      country_code: this.countryCode,
+      country_code: stripe ? null : this.countryCode,
       store: this.store,
       currency: this.currency,
       price,
       price_in_purchased_currency: price,
       tax_percentage: 0,
-      commission_percentage: 0.3,
-      takehome_percentage: 0.7,
+      commission_percentage: stripe ? 0 : 0.3,
+      takehome_percentage: stripe ? 1 : 0.7,
       offer_code: null,
     };
+    // Observed on every real Stripe event (1 = initial, +1 per renewal attempt); docs say "Sometimes" for the app stores.
+    if (stripe) payload["renewal_number"] = d.renewalIndex + 1;
     switch (type) {
       case "RENEWAL":
         payload["is_trial_conversion"] = from === "trial";
