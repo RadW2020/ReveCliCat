@@ -94,7 +94,7 @@ subscriber:                          # all optional
   period: P1M                        # ISO-8601 duration
   trial: P1W                         # omit → no trial
   grace_period: P16D                 # billing-retry window after BILLING_ISSUE
-  store: app_store                   # v0.1: app_store only
+  store: app_store                   # app_store | play_store (Google-shaped ids and product_id format)
   environment: SANDBOX               # SANDBOX | PRODUCTION
 steps:
   - event: INITIAL_PURCHASE          # starts the trial (period_type: TRIAL, price 0)
@@ -115,7 +115,7 @@ expect:
 
 Rules: a step is exactly one of `event` or `advance`; unknown keys are errors; validation errors point at `file:line:column`. Illegal transitions stop the run with the step number and the list of legal events. `EXPIRATION` is only allowed once the virtual clock has reached `expiration_at_ms` (or the end of the grace period) — the error tells you exactly how much to `advance`.
 
-Shipped examples (`rcc init` copies them): `trial-converts`, `trial-churns`, `billing-issue-recovers`, `billing-issue-churns`, `cancel-then-uncancel`, `happy-year` (12 renewals).
+Shipped examples (`rcc init` copies them): `trial-converts`, `trial-churns`, `billing-issue-recovers`, `billing-issue-churns`, `cancel-then-uncancel`, `happy-year` (12 renewals), `play-trial-converts` (Google Play ids).
 
 ## CI
 
@@ -174,7 +174,7 @@ none ──INITIAL_PURCHASE──▶ trial ──RENEWAL (conversion)──▶ a
 ## Fidelity & scope
 
 - Schemas, enums and inclusion rules come from the official docs (fetched 2026-08-29) and the official sample payloads are used as test fixtures. The `TEST` event has no published sample, so its schema is marked *provisional* — a captured real one is very welcome (see `docs/BACKLOG.md`, T-004).
-- v0.1 models the **App Store** only. Google Play, Stripe, Amazon and Roku stores, a built-in tunnel, a web UI and hosted mode are intentionally out of scope (see the Icebox in `docs/BACKLOG.md`).
+- The generator models **App Store** (`--store app_store`, 16-digit transaction ids, original kept across resubscriptions) and **Google Play** (`--store play_store`, `GPA.…` order ids with `..N` renewal suffixes, `<subscription_id>:<base_plan_id>` product ids, new order on resubscription). Stripe, Amazon and Roku, a built-in tunnel, a web UI and hosted mode are intentionally out of scope (see the Icebox in `docs/BACKLOG.md`). Receivers accept events from every store.
 - Programmatic use: `import { runScenario, Subscriber, WebhookEnvelopeSchema } from "reveclicat"`.
 
 ## How this was built

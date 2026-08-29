@@ -107,8 +107,8 @@ describe("T-020 rcc send", () => {
   it("invalid --environment / --store list allowed values", async () => {
     const env = await run(["send", "TEST", "--environment", "prod", "--to", server.url]);
     expect(env.error!.message).toMatch(/SANDBOX/);
-    const store = await run(["send", "TEST", "--store", "play_store", "--to", server.url]);
-    expect(store.error!.message).toMatch(/app_store/);
+    const store = await run(["send", "TEST", "--store", "amazon", "--to", server.url]);
+    expect(store.error!.message).toMatch(/app_store, play_store/);
   });
 
   it("schema-invalid --set fails with the path and a hint", async () => {

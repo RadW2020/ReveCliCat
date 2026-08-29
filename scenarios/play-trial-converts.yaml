@@ -1,0 +1,16 @@
+name: play-trial-converts
+description: Google Play subscription (base plan ids, GPA order ids) — a one-week trial converts and renews once
+subscriber:
+  app_user_id: auto
+  store: play_store                    # transaction ids look like GPA.1234-1234-1234-12345, renewals ..0, ..1
+  product_id: premium:monthly-autorenew  # RevenueCat Play format <subscription_id>:<base_plan_id>
+  period: P1M
+  trial: P1W
+steps:
+  - event: INITIAL_PURCHASE      # trial starts (period_type: TRIAL)
+  - advance: P1W
+  - event: RENEWAL               # trial → paid, order id ..0
+  - advance: P1M
+  - event: RENEWAL               # order id ..1
+expect:
+  all_responses_status: 200

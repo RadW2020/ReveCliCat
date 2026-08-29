@@ -81,10 +81,11 @@ Arguments:
 Options:
   --to <url>              target URL (default: http://localhost:3000/webhook, or
                           "to" in reveclicat.config.json)
-  --store <store>         store: app_store (default: app_store, or "store" in
-                          reveclicat.config.json)
+  --store <store>         store to simulate: app_store | play_store (default:
+                          app_store, or "store" in reveclicat.config.json)
   --user <app_user_id>    app_user_id (default: generated $RCAnonymousID)
-  --product <product_id>  product_id (default: "com.example.premium.monthly")
+  --product <product_id>  product_id (default: com.example.premium.monthly, or
+                          com.example.premium:monthly for play_store)
   --auth-header <value>   value sent as the Authorization header (default:
                           "authHeader" in reveclicat.config.json)
   --environment <env>     SANDBOX | PRODUCTION (default: SANDBOX, or

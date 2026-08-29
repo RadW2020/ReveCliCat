@@ -14,7 +14,7 @@ export interface SendOptions {
   to?: string | undefined;
   store?: string | undefined;
   user?: string;
-  product: string;
+  product?: string | undefined;
   authHeader?: string | undefined;
   environment?: string | undefined;
   set?: string[] | undefined;
@@ -60,8 +60,8 @@ export function parseEnvironment(input: string): Environment {
 
 export function parseStore(input: string): CliStore {
   if ((CLI_STORES as readonly string[]).includes(input)) return input as CliStore;
-  throw new RccError(`Unsupported --store "${input}". v0.1 supports: ${CLI_STORES.join(", ")}.`, {
-    hint: "Other stores are on the roadmap (see docs/BACKLOG.md → Icebox).",
+  throw new RccError(`Unsupported --store "${input}". The generator supports: ${CLI_STORES.join(", ")}.`, {
+    hint: "Receivers (listen/tail/inbox) accept events from every store; only generation is limited. Others are in the Icebox.",
   });
 }
 
@@ -95,9 +95,9 @@ export function registerSend(program: Command, io: Io): void {
     .argument("<EVENT_TYPE>", `event to send: ${EVENT_TYPES.join(" | ")}`)
     .description("Send a single, schema-valid RevenueCat webhook event to your endpoint.")
     .option("--to <url>", `target URL (default: ${DEFAULT_TARGET}, or "to" in ${CONFIG_FILE})`)
-    .option("--store <store>", `store: ${CLI_STORES.join(" | ")} (default: app_store, or "store" in ${CONFIG_FILE})`)
+    .option("--store <store>", `store to simulate: ${CLI_STORES.join(" | ")} (default: app_store, or "store" in ${CONFIG_FILE})`)
     .option("--user <app_user_id>", "app_user_id (default: generated $RCAnonymousID)")
-    .option("--product <product_id>", "product_id", "com.example.premium.monthly")
+    .option("--product <product_id>", "product_id (default: com.example.premium.monthly, or com.example.premium:monthly for play_store)")
     .option("--auth-header <value>", `value sent as the Authorization header (default: "authHeader" in ${CONFIG_FILE})`)
     .option("--environment <env>", `${ENVIRONMENTS.join(" | ")} (default: SANDBOX, or "environment" in ${CONFIG_FILE})`)
     .option("--set <key=value>", "override a payload field (repeatable, dot paths allowed)", (v: string, acc: string[] | undefined) => [...(acc ?? []), v])

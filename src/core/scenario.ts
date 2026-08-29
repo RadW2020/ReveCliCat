@@ -25,12 +25,13 @@ const httpStatus = z.int({ error: "response_status must be an integer HTTP statu
 
 export const SubscriberConfigSchema = z.strictObject({
   app_user_id: z.string().min(1).default("auto"),
-  product_id: z.string().min(1).default("com.example.premium.monthly"),
+  /** No default here: the Subscriber picks a per-store default (see specs/F7-google-play.md). */
+  product_id: z.string().min(1).optional(),
   period: duration.default("P1M"),
   trial: duration.optional(),
   grace_period: duration.default("P16D"),
   store: z.enum(CLI_STORES, {
-    error: (iss) => `Unsupported store "${String(iss.input)}". v0.1 supports: ${list(CLI_STORES)}.`,
+    error: (iss) => `Unsupported store "${String(iss.input)}". Supported: ${list(CLI_STORES)}.`,
   }).default("app_store"),
   environment: z.enum(ENVIRONMENTS, {
     error: (iss) => `Invalid environment "${String(iss.input)}". Use one of: ${list(ENVIRONMENTS)}.`,
@@ -76,7 +77,6 @@ export const ScenarioSchema = z.strictObject({
   description: z.string().optional(),
   subscriber: SubscriberConfigSchema.default({
     app_user_id: "auto",
-    product_id: "com.example.premium.monthly",
     period: "P1M",
     grace_period: "P16D",
     store: "app_store",

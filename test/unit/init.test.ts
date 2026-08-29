@@ -39,10 +39,12 @@ describe("T-051 rcc init", () => {
       "billing-issue-recovers.yaml",
       "cancel-then-uncancel.yaml",
       "happy-year.yaml",
+      "play-trial-converts.yaml",
       "trial-churns.yaml",
       "trial-converts.yaml",
     ]);
     expect(out).toMatch(/reveclicat\.config\.json/);
+    expect(out).toMatch(/Created 8 files/);
     expect(out).toMatch(/scenarios\/trial-churns\.yaml/);
     expect(out).toMatch(/rcc run scenarios\/trial-churns\.yaml/);
   });

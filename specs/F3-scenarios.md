@@ -7,11 +7,11 @@ name: trial-billing-issue-recovers            # required, identifier-ish
 description: Trial converts, first renewal fails, recovers within grace period   # optional
 subscriber:                                   # optional block; every key optional
   app_user_id: auto                           # "auto" (default) → generated from the seed, or a fixed string
-  product_id: com.example.premium.monthly     # default com.example.premium.monthly
+  product_id: com.example.premium.monthly     # default per store: com.example.premium.monthly (app_store) / com.example.premium:monthly (play_store)
   period: P1M                                 # ISO-8601, default P1M
   trial: P1W                                  # ISO-8601; omit → no trial (INITIAL_PURCHASE goes straight to active)
   grace_period: P16D                          # ISO-8601, default P16D (Apple's default billing retry window)
-  store: app_store                            # only app_store in v0.1 (Icebox: others)
+  store: app_store                            # app_store | play_store
   environment: SANDBOX                        # SANDBOX | PRODUCTION
 steps:                                        # required, non-empty
   - event: INITIAL_PURCHASE                   # one of the 7 event types

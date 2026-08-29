@@ -4,6 +4,12 @@ All notable changes to this project are documented here. Format based on [Keep a
 
 ## [Unreleased]
 
+### Added
+- Google Play in the generator: `--store play_store` / `subscriber.store: play_store` emit `store: PLAY_STORE`, `GPA.dddd-dddd-dddd-ddddd` order ids with `..N` renewal suffixes (Google's `Purchase.getOrderId` convention), a new order on resubscription, and the `<subscription_id>:<base_plan_id>` default product id. New example `scenarios/play-trial-converts.yaml` (`rcc init` now copies 7 scenarios). (T-071, T-072)
+
+### Changed
+- `product_id` no longer has a default in the scenario schema / `--product`; the per-store default is applied by the generator. Explicit values are unchanged. (T-071)
+
 ## [0.1.1] — 2026-08-29
 
 ### Fixed

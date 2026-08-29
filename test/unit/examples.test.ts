@@ -15,10 +15,11 @@ const EXPECTED: Record<string, string[]> = {
   "billing-issue-churns": ["INITIAL_PURCHASE", "RENEWAL", "BILLING_ISSUE", "EXPIRATION"],
   "cancel-then-uncancel": ["INITIAL_PURCHASE", "CANCELLATION", "UNCANCELLATION", "RENEWAL"],
   "happy-year": ["INITIAL_PURCHASE", ...Array<string>(12).fill("RENEWAL")],
+  "play-trial-converts": ["INITIAL_PURCHASE", "RENEWAL", "RENEWAL"],
 };
 
 describe("T-032 shipped example scenarios", () => {
-  it("ships exactly the six documented scenarios", () => {
+  it("ships exactly the seven documented scenarios", () => {
     const files = readdirSync(DIR).filter((f) => f.endsWith(".yaml")).sort();
     expect(files).toEqual(Object.keys(EXPECTED).sort().map((n) => `${n}.yaml`));
   });

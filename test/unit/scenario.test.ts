@@ -52,13 +52,13 @@ describe("T-030 loadScenario — valid input", () => {
     expect(s.description).toBeUndefined();
     expect(s.subscriber).toEqual({
       app_user_id: "auto",
-      product_id: "com.example.premium.monthly",
       period: "P1M",
       grace_period: "P16D",
       store: "app_store",
       environment: "SANDBOX",
     });
     expect(s.subscriber.trial).toBeUndefined();
+    expect(s.subscriber.product_id).toBeUndefined(); // per-store default applied by the Subscriber
     expect(s.expect).toBeUndefined();
   });
 
@@ -115,7 +115,7 @@ describe("T-030 loadScenario — errors with line/column", () => {
   });
 
   it("rejects bad subscriber values (store, environment, period)", () => {
-    expect(expectError("name: x\nsubscriber:\n  store: play_store\nsteps:\n  - event: TEST\n").path).toBe("subscriber.store");
+    expect(expectError("name: x\nsubscriber:\n  store: amazon\nsteps:\n  - event: TEST\n").path).toBe("subscriber.store");
     expect(expectError("name: x\nsubscriber:\n  environment: prod\nsteps:\n  - event: TEST\n").message).toMatch(/SANDBOX/);
     expect(expectError("name: x\nsubscriber:\n  period: monthly\nsteps:\n  - event: TEST\n").message).toMatch(/monthly/);
   });

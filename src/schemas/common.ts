@@ -49,7 +49,9 @@ export type CancelReason = (typeof CANCEL_REASONS)[number];
 export const EXPIRATION_REASONS = [...CANCEL_REASONS, "SUBSCRIPTION_PAUSED"] as const;
 export type ExpirationReason = (typeof EXPIRATION_REASONS)[number];
 
-/** CLI-facing store names (lowercase) → RevenueCat `store` values. v0.1 supports app_store only (see Icebox). */
-export const CLI_STORES = ["app_store"] as const;
+/** CLI-facing store names (lowercase) → RevenueCat `store` values. Generator supports these; receivers accept every store. */
+export const CLI_STORES = ["app_store", "play_store"] as const;
 export type CliStore = (typeof CLI_STORES)[number];
-export const CLI_STORE_TO_STORE: Record<CliStore, Store> = { app_store: "APP_STORE" };
+export const CLI_STORE_TO_STORE: Record<CliStore, Store> = { app_store: "APP_STORE", play_store: "PLAY_STORE" };
+/** Default product id per store (Play uses RevenueCat's `<subscription_id>:<base_plan_id>` format). */
+export const DEFAULT_PRODUCT_ID: Record<CliStore, string> = { app_store: "com.example.premium.monthly", play_store: "com.example.premium:monthly" };

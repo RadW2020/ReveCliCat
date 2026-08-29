@@ -65,6 +65,16 @@ Captured on project `mytestapp` through `rcc tail --smee` → `rcc listen --verb
 | Delivery latency ≈ **2 s** after the API call (docs: 5–60 s). A dashboard TEST event answered with 400 was **not retried** within 70 min, and neither it nor a filtered-out event appear in the dashboard's "Webhook Events" table. | Test events look non-persisted/non-retried; do not rely on retries to validate idempotency. |
 | Webhook "Environment: Sandbox only" silently drops promotional (PRODUCTION) events. | Documented in README (use "Both" for API-driven captures). |
 
+## Google Play specifics used by the generator (Epic 7, 2026-08-29)
+| Fact | Source |
+|------|--------|
+| `product_id` = `<subscription_id>:<base_plan_id>` for Play products created after Feb 2023 | S2, `product_id` row |
+| Order ids look like `GPA.1234-1234-1234-12345`; `original_transaction_id` = first order id | S3 `PRODUCT_CHANGE` sample (`store: PLAY_STORE`) |
+| Renewal order ids = original + `..N` (`..0` = first renewal) | Google Play Billing reference, `Purchase.getOrderId()` (developer.android.com, fetched 2026-08-29) |
+| `is_family_share` always false outside the App Store | S2 |
+| All 7 v0.1 event types apply to Google Play | S2 store-compatibility table |
+| Real dashboard TEST event is `store: PLAY_STORE` | `test/fixtures/events/real/TEST.json` |
+
 ## Flow facts used by the state machine (S2, S4)
 - Trial start = `INITIAL_PURCHASE` with `period_type: TRIAL`; trial → paid = `RENEWAL` (`is_trial_conversion: true`).
 - Cancellation does not revoke access; `EXPIRATION` arrives at period end. Re-enabling before expiry = `UNCANCELLATION`.

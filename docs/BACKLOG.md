@@ -43,6 +43,9 @@ Legend: 🧊 Icebox · 📋 Backlog · 🔨 In progress · ✅ Done · ⛔ Block
 | T-064 | Lifecycle schemas: `Always` fields may be null (real captures) | E6 | ✅ |
 | T-065 | Tolerate unknown event types in listen/tail/inbox (forward compatibility) | E6 | ✅ |
 | T-066 | `rcc run` prints table rows live as events are delivered | E5 | ✅ |
+| T-070 | Spec F7: Google Play in the generator | E7 | ✅ |
+| T-071 | `play_store`: Google-shaped ids and defaults in `Subscriber` | E7 | ✅ |
+| T-072 | `play_store` on the CLI surface: `--store`, scenarios, config, example, docs | E7 | ✅ |
 
 ---
 
@@ -337,6 +340,27 @@ Found while recording the demo: with `--speed 200` the terminal stays blank for 
 
 ---
 
+## Epic 7 — Google Play in the generator (0.2.0)
+
+> Added 2026-08-29 (descongelado del Icebox). Second store by volume; receivers already accept `PLAY_STORE` (real TEST capture); the generator now produces Google-shaped ids.
+
+### T-070 · Spec F7
+- [ ] `specs/F7-google-play.md` with sources (RevenueCat S2/S3, Google `Purchase.getOrderId`), generator rule table, surface changes. `payload-sources.md` gets a Google Play section.
+
+### T-071 · `Subscriber` supports `play_store`
+**Depends on:** T-070
+- [ ] `store: "play_store"` → payload `store: PLAY_STORE`; initial `transaction_id` = `original_transaction_id` matches `^GPA\.\d{4}-\d{4}-\d{4}-\d{5}$`.
+- [ ] Renewals: `transaction_id` = `<original>..0`, `..1`, … (trial conversion is `..0`); `original_transaction_id` unchanged.
+- [ ] Resubscribe after `expired` → new `GPA.` id that also becomes `original_transaction_id`.
+- [ ] Default `product_id` is `com.example.premium:monthly` when the caller leaves it unset for Play; explicit `product_id` is always respected.
+- [ ] `is_family_share` false; every generated Play event validates against the schemas; all 8 coherence-rule tests pass for Play too (parametrised over both stores). Seed determinism holds.
+
+### T-072 · CLI surface
+**Depends on:** T-071
+- [ ] `rcc send --store play_store`, scenario `subscriber.store: play_store`, `reveclicat.config.json` `store: play_store` all accepted; unknown store message lists both.
+- [ ] `scenarios/play-trial-converts.yaml` shipped and copied by `rcc init`; examples test expects 7 files.
+- [ ] README: stores table / "v0.1 App Store only" wording updated; CHANGELOG `[Unreleased]` → 0.2.0 notes; Icebox entry for Google Play removed (Stripe/Amazon/Roku remain).
+
 ## In progress
 
 _(none)_
@@ -369,6 +393,9 @@ _(none)_
 - T-064
 - T-065
 - T-066
+- T-070
+- T-071
+- T-072
 
 ## Icebox
 
@@ -377,7 +404,7 @@ Not for v0.1. Each line has its justification.
 - Hosted public webhook relay (smee.io model) and multi-tenant persistent inbox — ADR-004: self-host first; operating other people's payloads needs a privacy/TOS story and real demand.
 - Payload redaction tooling for promoting captured events to fixtures — manual for v0.2.
 - Non-subscription products / `NON_RENEWING_PURCHASE` generation — accepted by receivers since T-065, not modelled by the state machine (promotional grants emit it).
-- Google Play / Stripe / Amazon / Roku stores — v0.1 proves the model with `app_store`; other stores add store-specific fields we have not verified.
+- Stripe / Amazon / Roku stores — v0.1 proves the model with `app_store` (Google Play added in 0.2.0, Epic 7); other stores add store-specific fields we have not verified.
 - Integrated tunnel (ngrok-like) — main use case is local generation; no tunnel needed.
 - Web UI — CLI is the product; a UI would dilute focus.
 - Hosted mode — no infra in v0.1.

@@ -5,6 +5,7 @@ import { applyOverrides } from "./set-path.js";
 import { transition, type SubscriptionState } from "./state-machine.js";
 import {
   CLI_STORE_TO_STORE,
+  DEFAULT_PRODUCT_ID,
   EVENT_SCHEMAS,
   type CliStore,
   type Environment,
@@ -16,7 +17,8 @@ import {
 export interface SubscriberOptions {
   /** "auto" → `$RCAnonymousID:<32 hex>` from the RNG. */
   appUserId?: string | undefined;
-  productId: string;
+  /** Defaults per store: `com.example.premium.monthly` (App Store), `com.example.premium:monthly` (Play). */
+  productId?: string | undefined;
   period: string | Duration;
   /** Free-trial length; omit for no trial. */
   trial?: string | Duration | undefined;
@@ -71,6 +73,9 @@ export class Subscriber {
   private readonly trial: Duration | undefined;
   private readonly grace: Duration;
   private readonly store;
+  private readonly cliStore: CliStore;
+  /** Play: number of renewals on the current order (drives the `..N` suffix). */
+  private renewalIndex = 0;
   private readonly environment: Environment;
   private readonly price: number;
   private readonly currency: string;
@@ -94,13 +99,14 @@ export class Subscriber {
     this.period = asDuration(opts.period);
     this.trial = opts.trial === undefined ? undefined : asDuration(opts.trial);
     this.grace = asDuration(opts.gracePeriod ?? "P16D");
-    this.store = CLI_STORE_TO_STORE[opts.store ?? "app_store"];
+    this.cliStore = opts.store ?? "app_store";
+    this.store = CLI_STORE_TO_STORE[this.cliStore];
     this.environment = opts.environment ?? "SANDBOX";
     this.price = opts.price ?? 9.99;
     this.currency = opts.currency ?? "USD";
     this.countryCode = opts.countryCode ?? "US";
     this.entitlementIds = opts.entitlementIds ?? ["premium"];
-    this.productId = opts.productId;
+    this.productId = opts.productId ?? DEFAULT_PRODUCT_ID[this.cliStore];
     this.appUserId =
       opts.appUserId === undefined || opts.appUserId === "auto" ? `$RCAnonymousID:${deps.rng.hex(32)}` : opts.appUserId;
     this.appId = opts.appId ?? `app${deps.rng.hex(12)}`;
@@ -144,6 +150,7 @@ export class Subscriber {
       this.expirationAtMs = draft.expirationAtMs;
       this.periodType = draft.periodType;
       this.gracePeriodExpirationAtMs = draft.gracePeriodExpirationAtMs;
+      this.renewalIndex = draft.renewalIndex;
       if (type === "CANCELLATION") this.resumeState = from === "trial" ? "trial" : "active";
       this._state = next;
     }
@@ -154,11 +161,24 @@ export class Subscriber {
 
   /* ----------------------------------------------------------- internals */
 
-  private newTransactionId(): string {
-    // App Store-like 16-digit numeric string.
-    let s = String(1 + this.deps.rng.int(9));
-    for (let i = 0; i < 15; i++) s += String(this.deps.rng.int(10));
+  private digits(n: number): string {
+    let s = "";
+    for (let i = 0; i < n; i++) s += String(this.deps.rng.int(10));
     return s;
+  }
+
+  /** A brand-new order/transaction id in the store's format (see specs/F7-google-play.md). */
+  private newTransactionId(): string {
+    if (this.cliStore === "play_store") {
+      return `GPA.${this.digits(4)}-${this.digits(4)}-${this.digits(4)}-${this.digits(5)}`;
+    }
+    return String(1 + this.deps.rng.int(9)) + this.digits(15); // App Store-like 16-digit numeric string
+  }
+
+  /** Renewal id: Play appends `..N` to the original order id; App Store issues a fresh transaction id. */
+  private renewalTransactionId(originalId: string | undefined, index: number): string {
+    if (this.cliStore === "play_store" && originalId !== undefined) return `${originalId}..${index}`;
+    return this.newTransactionId();
   }
 
   private draftFor(type: EventType, from: SubscriptionState, now: number): PeriodDraft {
@@ -169,12 +189,16 @@ export class Subscriber {
       expirationAtMs: this.expirationAtMs,
       periodType: this.periodType,
       gracePeriodExpirationAtMs: this.gracePeriodExpirationAtMs,
+      renewalIndex: this.renewalIndex,
     };
     switch (type) {
       case "INITIAL_PURCHASE": {
         const startsTrial = from === "none" && this.trial !== undefined;
         d.transactionId = this.newTransactionId();
-        d.originalTransactionId ??= d.transactionId;
+        // App Store keeps the original transaction id across resubscriptions; Play starts a new order (new purchase token).
+        if (this.cliStore === "play_store") d.originalTransactionId = d.transactionId;
+        else d.originalTransactionId ??= d.transactionId;
+        d.renewalIndex = 0;
         d.purchasedAtMs = now;
         d.expirationAtMs = addDuration(now, startsTrial ? this.trial : this.period);
         d.periodType = startsTrial ? "TRIAL" : "NORMAL";
@@ -183,7 +207,8 @@ export class Subscriber {
       }
       case "RENEWAL": {
         const start = d.expirationAtMs ?? now;
-        d.transactionId = this.newTransactionId();
+        d.transactionId = this.renewalTransactionId(d.originalTransactionId, d.renewalIndex);
+        d.renewalIndex += 1;
         d.purchasedAtMs = start;
         d.expirationAtMs = addDuration(start, this.period);
         d.periodType = "NORMAL";
@@ -267,4 +292,5 @@ interface PeriodDraft {
   expirationAtMs: number | undefined;
   periodType: PeriodType;
   gracePeriodExpirationAtMs: number | null;
+  renewalIndex: number;
 }
