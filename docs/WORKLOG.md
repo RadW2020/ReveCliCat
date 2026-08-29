@@ -229,3 +229,6 @@ Diary of work sessions. Newest at the bottom. Format: date · ticket · what was
 - Impl: `CLI_STORES` + `DEFAULT_PRODUCT_ID` in `schemas/common.ts`; `Subscriber` gets a per-store id strategy (`newTransactionId`, `renewalTransactionId`, `renewalIndex` in the period draft); `product_id` default moved out of the scenario schema / `--product` into the generator. `scenarios/play-trial-converts.yaml`. README, CHANGELOG (`[Unreleased]` → 0.2.0), F3 spec, Icebox (Google Play removed).
 - Smoke: `rcc send RENEWAL --store play_store --dry-run` → `PLAY_STORE com.example.premium:monthly GPA.….. 0`; `rcc run scenarios/play-trial-converts.yaml --dry-run` → 3 events, expectations pass.
 - Gates: typecheck ✓ · lint ✓ · tests 228/228 ✓.
+
+## 2026-08-29 · 0.2.0 released
+- First release through the new flow end to end: CHANGELOG cut → `npm version minor` → `git push --follow-tags` → `release.yml` published `reveclicat@0.2.0` via trusted publishing; GitHub release created. Verified from the registry: `rcc send RENEWAL --store play_store --dry-run` → `GPA.….. 0`.
