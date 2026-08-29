@@ -152,8 +152,20 @@ function toPos(counter: LineCounter, offset: number): Pos {
 
 /* ------------------------------------------------------------------ loading */
 
-/** Parse scenario YAML text. `file` is used only for error messages. */
-export function parseScenario(text: string, file = "<inline>"): Scenario {
+export interface StepPosition {
+  line: number;
+  column: number;
+}
+
+export interface LoadedScenario {
+  scenario: Scenario;
+  file: string;
+  /** 1-based position of every step node, for mid-run error messages. */
+  stepPositions: StepPosition[];
+}
+
+/** Parse scenario YAML text and keep the position of every step. `file` is used only for messages. */
+export function parseScenarioWithSource(text: string, file = "<inline>"): LoadedScenario {
   const counter = new LineCounter();
   const doc = parseDocument(text, { lineCounter: counter, keepSourceTokens: true });
 
@@ -170,7 +182,10 @@ export function parseScenario(text: string, file = "<inline>"): Scenario {
   }
 
   const result = ScenarioSchema.safeParse(doc.toJS() ?? {});
-  if (result.success) return result.data;
+  if (result.success) {
+    const stepPositions = result.data.steps.map((_, i) => locate(doc, counter, ["steps", i]));
+    return { scenario: result.data, file, stepPositions };
+  }
 
   // Report the first (most specific) issue. Custom "exactly one of" issues are the most useful for steps.
   const issue = result.error.issues[0]!;
@@ -185,8 +200,13 @@ export function parseScenario(text: string, file = "<inline>"): Scenario {
   throw new ScenarioValidationError({ file, line: pos.line, column: pos.column, path: dotted(issue.path), detail });
 }
 
-/** Read and validate a scenario file from disk. */
-export function loadScenario(file: string): Scenario {
+/** Parse scenario YAML text. */
+export function parseScenario(text: string, file = "<inline>"): Scenario {
+  return parseScenarioWithSource(text, file).scenario;
+}
+
+/** Read and validate a scenario file from disk, keeping step positions. */
+export function loadScenarioWithSource(file: string): LoadedScenario {
   let text: string;
   try {
     text = readFileSync(file, "utf8");
@@ -196,5 +216,10 @@ export function loadScenario(file: string): Scenario {
       cause,
     });
   }
-  return parseScenario(text, file);
+  return parseScenarioWithSource(text, file);
+}
+
+/** Read and validate a scenario file from disk. */
+export function loadScenario(file: string): Scenario {
+  return loadScenarioWithSource(file).scenario;
 }

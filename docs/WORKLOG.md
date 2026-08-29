@@ -89,3 +89,10 @@ Diary of work sessions. Newest at the bottom. Format: date · ticket · what was
 **Smoke demo:** `rcc listen --port 8799 --auth-header "Bearer dev"` ⟷ `rcc send RENEWAL … --auth-header "Bearer dev"` → 200; without auth → 401 / `AUTH MISMATCH` (see T-021 entry).
 **Debt:** `listen` keeps the process alive with a never-resolving promise (fine for a CLI, not for embedding — `startListener` is the embeddable API). No config-file defaults yet (T-051).
 **Next:** Epic 3 — scenario engine + `rcc run` (T-031; parser T-030 already done), example scenarios (T-032).
+
+## 2026-08-29 · T-031 · Scenario engine + `rcc run`
+- Spec: engine contract (`RunResult`, failure modes) and the `rcc run` output format added to `specs/F3-scenarios.md`.
+- Tests first (15): `engine.test.ts` (step walk with virtual times, dry-run `status: null`, seed determinism, non-2xx recorded without aborting, illegal transition → `step N (file:line)`, premature EXPIRATION hint, unreachable endpoint, `--speed` pauses, subscriber config + `set:` overrides) and `run-command.test.ts` (table/summary/exit codes, dry-run JSON lines on stdout + table on stderr, `--auth-header`, file:line errors, invalid `--speed`).
+- Impl: `parseScenarioWithSource`/`loadScenarioWithSource` (step positions), `runScenario()` in `src/core/engine.ts`, `src/core/output.ts` (padded table with post-padding colour, summary), `src/commands/run.ts`. Public API widened in `src/index.ts`.
+- Terminal smoke: `rcc listen --port 8798` ⟷ `rcc run demo.yaml --seed 7` → 4/4 events 200, `virtual span 41d (2025-01-01 → 2025-02-11)`; illegal step → `step 2 (file:4): Illegal transition …`, exit 1.
+- Gates: typecheck ✓ · lint ✓ · tests 137/137 ✓.
