@@ -366,6 +366,7 @@ Not for v0.1. Each line has its justification.
 
 - Hosted public webhook relay (smee.io model) and multi-tenant persistent inbox — ADR-004: self-host first; operating other people's payloads needs a privacy/TOS story and real demand.
 - Payload redaction tooling for promoting captured events to fixtures — manual for v0.2.
+- Non-subscription products / `NON_RENEWING_PURCHASE` generation — accepted by receivers since T-065, not modelled by the state machine (promotional grants emit it).
 - Google Play / Stripe / Amazon / Roku stores — v0.1 proves the model with `app_store`; other stores add store-specific fields we have not verified.
 - Integrated tunnel (ngrok-like) — main use case is local generation; no tunnel needed.
 - Web UI — CLI is the product; a UI would dilute focus.
