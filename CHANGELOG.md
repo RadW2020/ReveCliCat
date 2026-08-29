@@ -10,6 +10,7 @@ All notable changes to this project are documented here. Format based on [Keep a
 - npm page: demo GIF and CI badge were broken (repository was private; GIF used a relative path). Repository is now public and the GIF uses an absolute URL.
 
 ### Added
+- README "How this was built" section, `docs/CONSTITUTION.md` (the maintainer's original project constitution) and a header explaining `docs/WORKLOG.md`.
 - `release.yml` workflow: pushing a `v*` tag publishes to npm via trusted publishing (OIDC, provenance), after checking the tag matches `package.json`.
 
 ## [0.1.0] — 2026-08-29

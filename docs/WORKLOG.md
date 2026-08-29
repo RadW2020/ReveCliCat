@@ -2,6 +2,8 @@
 
 Diary of work sessions. Newest at the bottom. Format: date · ticket · what was done · test result · notes.
 
+> **What this file is.** The session log written in first person by the AI coding agent (Claude Code) that implemented the project under the maintainer's [constitution](CONSTITUTION.md). It is kept verbatim — including wrong turns (a fake test server that split JSON mid-string, a README edited without re-running the suite, an `alias` that does not work in non-interactive bash) and how each was caught by the gates. "The maintainer" is the human owner of the project; every scope, product and validation decision recorded here was theirs.
+
 ---
 
 ## 2026-08-29 · Bootstrap

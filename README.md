@@ -177,6 +177,12 @@ none ──INITIAL_PURCHASE──▶ trial ──RENEWAL (conversion)──▶ a
 - v0.1 models the **App Store** only. Google Play, Stripe, Amazon and Roku stores, a built-in tunnel, a web UI and hosted mode are intentionally out of scope (see the Icebox in `docs/BACKLOG.md`).
 - Programmatic use: `import { runScenario, Subscriber, WebhookEnvelopeSchema } from "reveclicat"`.
 
+## How this was built
+
+ReveCliCat was built with **spec-driven, AI-assisted development**: the maintainer wrote the product brief and a ten-article [project constitution](docs/CONSTITUTION.md) (spec first, tests first, full traceability, payload fidelity from official docs only, closed scope), made the product and scope decisions, and validated the result against a real RevenueCat project; an AI coding agent (Claude Code) implemented it ticket by ticket under those rules — failing tests first, then code, then docs.
+
+The evidence is in the repo rather than in claims: [`docs/BACKLOG.md`](docs/BACKLOG.md) (every ticket with acceptance criteria), [`docs/WORKLOG.md`](docs/WORKLOG.md) (the agent's session-by-session log, kept verbatim — including the mistakes and how they were caught), [`docs/adr/`](docs/adr/) (why each non-trivial decision went the way it did), [`docs/payload-sources.md`](docs/payload-sources.md) (where every schema field comes from, and what real captured events taught us that the docs did not), and a commit history where each `feat(T-xxx)` lands with its tests. The whole 0.1.0 was built in one day; the method, not the calendar, is the point.
+
 ## Contributing
 
 Spec-driven, tests-first, one ticket per commit — see [`CONTRIBUTING.md`](CONTRIBUTING.md), the backlog in `docs/BACKLOG.md` and the decision log in `docs/adr/`.
