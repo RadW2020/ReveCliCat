@@ -31,7 +31,7 @@ Legend: 🧊 Icebox · 📋 Backlog · 🔨 In progress · ✅ Done · ⛔ Block
 | T-031 | Scenario engine + `rcc run` | E3 | ✅ |
 | T-032 | The 6 example scenarios | E3 | ✅ |
 | T-040 | CI mode: `expect:` blocks, exit codes, `--json` | E4 | ✅ |
-| T-041 | `examples/express-handler.ts` | E4 | 📋 |
+| T-041 | `examples/express-handler.ts` | E4 | ✅ |
 | T-042 | `examples/github-action.yml` | E4 | 📋 |
 | T-050 | README (English) | E5 | 📋 |
 | T-051 | `rcc init`, LICENSE, CONTRIBUTING, CHANGELOG 0.1.0 | E5 | 📋 |
@@ -290,6 +290,7 @@ _(none)_
 - T-031
 - T-032
 - T-040
+- T-041
 
 ## Icebox
 

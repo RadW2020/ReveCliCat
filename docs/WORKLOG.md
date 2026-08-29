@@ -116,3 +116,10 @@ Diary of work sessions. Newest at the bottom. Format: date · ticket · what was
 - Housekeeping: CHANGELOG `[Unreleased]` caught up with the CLI surface added by T-020/021/030/031/032/040 (art. 10 — should have been per ticket; from here on it is).
 - Terminal: `rcc run scenarios/trial-churns.yaml --json --dry-run | node -e …` parses: 3 events, 1 expectation, ok=true.
 - Gates: typecheck ✓ · lint ✓ · tests 155/155 ✓.
+
+## 2026-08-29 · T-041 · `examples/express-handler.ts`
+- ADR-003: `express` + `@types/express` as dev-only deps. The example imports from `"reveclicat"` like a user would; inside the repo that resolves to `src/index.ts` via `tsconfig.paths` + a vitest alias.
+- Tests first (5): valid event → 200 `{ok:true}`, retry with same `event.id` → 200 `{ok:true, deduped:true}` and `onEvent` called once, wrong/missing auth → 401, garbage / invalid envelope → 400 with issues, `GET /health`, works with no auth configured.
+- Impl: `createApp({ authHeader?, onEvent? })` — raw-text body so JSON errors are 400s, in-memory `Set` dedupe (comment points to Redis/DB for prod), respond-then-process. Runs standalone with `npx tsx examples/express-handler.ts` (`PORT`, `RC_WEBHOOK_AUTH`).
+- Terminal: `PORT=3007 RC_WEBHOOK_AUTH="Bearer dev" npx tsx examples/express-handler.ts` ⟷ `rcc run scenarios/billing-issue-recovers.yaml --to … --auth-header "Bearer dev"` → 4/4 200, 2/2 expectations; handler log shows the four events.
+- Gates: typecheck ✓ · lint ✓ · tests 160/160 ✓.

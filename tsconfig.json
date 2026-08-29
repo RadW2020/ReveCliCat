@@ -20,7 +20,12 @@
     "skipLibCheck": true,
     "noEmit": true,
     "outDir": "dist",
-    "ignoreDeprecations": "6.0"
+    "ignoreDeprecations": "6.0",
+    "paths": {
+      "reveclicat": [
+        "./src/index.ts"
+      ]
+    }
   },
   "include": [
     "src",
