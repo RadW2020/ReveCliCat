@@ -131,3 +131,16 @@ describe("T-004 real captured payloads validate", () => {
     expect(ev.app_user_id).toMatch(/^[0-9a-f-]{36}$/);
   });
 });
+
+describe("T-064 real lifecycle payloads (store PROMOTIONAL) validate", () => {
+  it.each(["CANCELLATION", "EXPIRATION"])("%s.promotional.json", (type) => {
+    const real = JSON.parse(readFileSync(join(FIX, `real/${type}.promotional.json`), "utf8")) as WebhookEnvelope;
+    const r = WebhookEnvelopeSchema.safeParse(real);
+    expect(r.success, JSON.stringify(r.success ? null : r.error.issues.slice(0, 4))).toBe(true);
+    if (!r.success) return;
+    expect(r.data.event.type).toBe(type);
+    expect(r.data.event.is_family_share).toBeNull();
+    expect(r.data.event.country_code).toBeNull();
+    expect(r.data.event.store).toBe("PROMOTIONAL");
+  });
+});

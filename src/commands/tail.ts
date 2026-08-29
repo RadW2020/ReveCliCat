@@ -3,7 +3,7 @@ import { RccError } from "../core/errors.js";
 import { assertUrl } from "../core/http.js";
 import { println, type Io } from "../core/io.js";
 import { bold, cyan, dim, green, magenta, red, yellow } from "../core/colors.js";
-import { WebhookEnvelopeSchema } from "../schemas/index.js";
+import { classifyEnvelope } from "../schemas/index.js";
 
 export const SMEE_ORIGIN = "https://smee.io";
 
@@ -170,14 +170,16 @@ export function startTail(opts: TailOptions): TailHandle {
 
   async function handle(req: RelayedRequest): Promise<void> {
     const time = dim(clock(req.timestamp));
-    const result = WebhookEnvelopeSchema.safeParse(req.body);
+    const classified = classifyEnvelope(req.body);
     let label: string;
-    if (result.success) {
-      const ev = result.data.event;
-      label = `${cyan(bold(ev.type.padEnd(16)))} ${yellow(ev.app_user_id)}  ${ev.product_id ?? ""}`;
-    } else {
-      const issues = result.error.issues.slice(0, 3).map((i) => `${i.path.join(".")}: ${i.message}`).join("; ");
+    if (classified.kind === "invalid") {
+      const issues = classified.issues.slice(0, 3).map((i) => `${i.path}: ${i.message}`).join("; ");
       label = `${red(bold("INVALID"))}  ${issues}`;
+    } else {
+      const ev = classified.envelope.event;
+      const productId = typeof ev["product_id"] === "string" ? ev["product_id"] : "";
+      const typeLabel = classified.kind === "known" ? cyan(bold(ev.type.padEnd(16))) : `${yellow(bold("UNSUPPORTED"))} ${yellow(ev.type)}`;
+      label = `${typeLabel} ${yellow(ev.app_user_id)}  ${productId}`;
     }
     let suffix = "";
     if (opts.forward) {

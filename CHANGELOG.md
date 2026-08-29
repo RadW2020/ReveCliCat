@@ -5,6 +5,8 @@ All notable changes to this project are documented here. Format based on [Keep a
 ## [Unreleased]
 
 ### Fixed
+- Lifecycle schemas: `is_family_share` and `country_code` are nullable, `renewal_number`/`metadata` accept explicit `null` — real `CANCELLATION`/`EXPIRATION` events (store `PROMOTIONAL`, captured 2026-08-29) carry nulls where the docs say "Always". (T-064)
+- `rcc listen`, `rcc tail` and `rcc inbox` no longer reject well-formed events of types outside the seven (`NON_RENEWING_PURCHASE`, future types): they are accepted (200), shown as `UNSUPPORTED <TYPE>`, stored and forwarded. New `classifyEnvelope()` / `UnknownEventSchema` in the public API. (T-065)
 - `TEST` event schema: a real dashboard test event (captured 2026-08-29) carries `null` in every subscription-lifecycle field (`transaction_id`, `is_family_share`, prices, `renewal_number`, `metadata`…) and `store: PLAY_STORE`; the schema now accepts that and is no longer provisional. (T-004)
 
 ### Added

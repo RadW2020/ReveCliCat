@@ -184,3 +184,17 @@ Diary of work sessions. Newest at the bottom. Format: date · ticket · what was
 - Docs: `payload-sources.md` TEST row → VERIFIED with the observed field table; fixture README; CHANGELOG `Fixed`.
 - Rebuilt and restarted the listener; replaying the captured payload → 200. RevenueCat should retry the 400'd delivery (5/10/20/40/80 min) reusing `id`/`event_timestamp_ms` — observation pending below.
 - Gates: typecheck ✓ · lint ✓ · tests 210/210 ✓.
+
+## 2026-08-29 · T-063 · Real lifecycle events captured (promotional grant/revoke)
+- Maintainer created a v2 API key (stored in `.env`, gitignored); with it I created entitlement `premium` (v2), then via v1 granted/revoked promotional access to customer `rcc_promo_test`. First grant produced nothing: the webhook was "Sandbox only" and promotional events are `PRODUCTION` (confirmed via v2 subscriptions API) → maintainer switched it to "Both". Revoke → `CANCELLATION` + `EXPIRATION` in ~2 s; re-grant → `NON_RENEWING_PURCHASE` in ~2 s.
+- Our listener answered **400** to all three: two real defects → T-064 (nulls in "Always" fields) and T-065 (unknown event type rejected). Fixtures saved under `test/fixtures/events/real/` (no PII: synthetic customer). Findings table added to `payload-sources.md`.
+- Also observed: the dashboard TEST event we 400'd was never retried (70 min) and does not show in the dashboard's event table.
+
+## 2026-08-29 · T-064 · Lifecycle "Always" fields nullable
+- Tests first: real `CANCELLATION`/`EXPIRATION` PROMOTIONAL fixtures must validate (red: `is_family_share`, `country_code`, `renewal_number` null). Fix: `.nullable()` on those, `metadata` nullable. Generator unchanged (App Store values non-null). Suite green.
+
+## 2026-08-29 · T-065 · Unknown event types accepted by receivers
+- Tests first (classify unit + listen/inbox/tail): `NON_RENEWING_PURCHASE` and a made-up `FUTURE_EVENT` → `unknown-type`, garbage/missing common fields → `invalid`, known-but-broken (`store: NOPE`) → `invalid`.
+- Impl: `UnknownEventSchema` (common + identity + any `type`), `classifyEnvelope()`; `listen` (200 + yellow `UNSUPPORTED <TYPE>`), `inbox` (`unsupportedType: true`), `tail` (same label). README + CHANGELOG.
+- Commit note: T-064 and T-065 share `src/schemas/events.ts`, so they are committed together (atomic green commit beats one-ticket-per-commit here).
+- Gates: typecheck ✓ · lint ✓ · tests 218/218 ✓.

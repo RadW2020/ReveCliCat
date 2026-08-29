@@ -39,7 +39,9 @@ Legend: 🧊 Icebox · 📋 Backlog · 🔨 In progress · ✅ Done · ⛔ Block
 | T-060 | Spec F6 (inbox + tail) and ADR-004 | E6 (v0.2) | ✅ |
 | T-061 | `rcc tail --smee` — receive real webhooks via smee.io, print & forward to localhost | E6 (v0.2) | ✅ |
 | T-062 | `rcc inbox` self-hosted server + `rcc tail --inbox` | E6 (v0.2) | ✅ |
-| T-063 | Deploy inbox on maintainer's cloud, capture real events, promote fixtures | E6 (v0.2) | 📋 |
+| T-063 | Capture real events via smee, promote fixtures | E6 (v0.2) | ✅ |
+| T-064 | Lifecycle schemas: `Always` fields may be null (real captures) | E6 (v0.2) | ✅ |
+| T-065 | Tolerate unknown event types in listen/tail/inbox (forward compatibility) | E6 (v0.2) | ✅ |
 
 ---
 
@@ -303,6 +305,21 @@ Local HTTP receiver that pretty-prints incoming webhook events.
 - [ ] `rcc tail --inbox <url> --token <t> [--since|--all]` reuses the T-061 SSE client and printer; 401 → "check --token" hint.
 - [ ] `examples/inbox/Dockerfile` (+ Caddy snippet); README section extended.
 
+### T-064 · Lifecycle schemas: `Always` fields may be null
+**Feature:** F1 (payloads). **Depends on:** T-063
+Real `CANCELLATION`/`EXPIRATION` (store PROMOTIONAL) carry `is_family_share: null` and `country_code: null`; `renewal_number`, `metadata`, `tax_percentage`, `commission_percentage` arrive as explicit `null`. The docs define "Always" as *key present, value may be null* — our lifecycle schemas were stricter than the docs.
+- [ ] `is_family_share` and `country_code` become `.nullable()` in the lifecycle group; every "Sometimes" field is `.nullable().optional()`.
+- [ ] `test/fixtures/events/real/{CANCELLATION,EXPIRATION}.promotional.json` validate against their schemas and the envelope.
+- [ ] Our generator keeps emitting non-null values (App Store behaviour); `payload-sources.md` documents the observed nulls per store.
+
+### T-065 · Tolerate unknown event types (forward compatibility)
+**Feature:** F2 (commands). **Depends on:** T-063
+The docs say new event types may appear without an `api_version` bump, and a real promotional grant emits `NON_RENEWING_PURCHASE`, which `rcc listen` answered with 400. Receivers must never reject a well-formed envelope because of its `type`.
+- [ ] `classifyEnvelope(body)` → `{ kind: "known", envelope }` | `{ kind: "unknown-type", type, envelope }` (common + identity fields valid, `type` not one of ours) | `{ kind: "invalid", issues }`.
+- [ ] `rcc listen`, `rcc tail` and `rcc inbox` log unknown types as `UNSUPPORTED <TYPE>` (yellow), answer/forward with 200 and store them; only `invalid` gets 400/`INVALID`.
+- [ ] `test/fixtures/events/real/NON_RENEWING_PURCHASE.promotional.json` is accepted by all three; a made-up `FUTURE_EVENT` too; garbage stays 400.
+- [ ] README: note that receivers accept every event type and only *generate* the seven.
+
 ### T-063 · Real-payload capture & fixture promotion
 **Feature:** F6. **Depends on:** T-061. **Needs a human:** deploy on the maintainer's cloud, configure the RevenueCat webhook to the inbox URL.
 - [ ] Inbox deployed (HTTPS) and registered in `mytestapp` webhooks with an auth header.
@@ -339,6 +356,9 @@ _(none)_
 - T-060
 - T-061
 - T-062
+- T-063
+- T-064
+- T-065
 
 ## Icebox
 

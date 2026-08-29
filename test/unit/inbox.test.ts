@@ -177,3 +177,15 @@ describe("T-062 rcc tail --inbox", () => {
     expect(out.text.indexOf("RENEWAL")).toBeLessThan(out.text.indexOf("CANCELLATION"));
   });
 });
+
+describe("T-065 inbox accepts unknown event types", () => {
+  it("stores them as valid with eventType and answers 200", async () => {
+    const { box } = await inbox();
+    const body = readFileSync(join(FIX, "real/NON_RENEWING_PURCHASE.promotional.json"), "utf8");
+    expect((await post(box.url, body)).status).toBe(200);
+    const { body: page } = await events(box.url);
+    expect(page.events[0]!.valid).toBe(true);
+    expect(page.events[0]!.eventType).toBe("NON_RENEWING_PURCHASE");
+    expect(page.events[0]!.unsupportedType).toBe(true);
+  });
+});

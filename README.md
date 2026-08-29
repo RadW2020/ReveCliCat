@@ -132,6 +132,7 @@ rcc tail --smee --forward http://localhost:3000/webhook
 ```
 
 - `--smee` uses [smee.io](https://smee.io) (GitHub's public webhook relay): zero setup, no account. It keeps **no history** — events only arrive while `rcc tail` is running — and payloads transit a third-party service, so use it for development, not production. Pass an existing channel (`--smee https://smee.io/…`) to keep the URL you already configured in the dashboard.
+- Receivers (`listen`, `tail`, `inbox`) accept **every** RevenueCat event type: the seven ReveCliCat can *generate* are validated in full, anything else (e.g. `NON_RENEWING_PURCHASE`, future types) is accepted and shown as `UNSUPPORTED <TYPE>`. Tip: set the dashboard webhook to "Both Production and Sandbox" — promotional grants made through the API are `PRODUCTION` events.
 - Each event is validated against the schemas (`INVALID` lines tell you what is off), printed in the same format as `rcc listen`, and, with `--forward`, re-POSTed to your local handler with the original `Authorization` header — the same workflow as the Stripe CLI's `listen` command forwarding to localhost.
 - Need history, retries and your own infrastructure? Run the **self-hosted inbox**:
 

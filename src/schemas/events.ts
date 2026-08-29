@@ -4,7 +4,7 @@
  * Objects are non-strict: RevenueCat may add fields without bumping api_version.
  */
 import { z } from "zod";
-import { CANCEL_REASONS, ENVIRONMENTS, EXPIRATION_REASONS, PERIOD_TYPES, STORES } from "./common.js";
+import { CANCEL_REASONS, ENVIRONMENTS, EVENT_TYPES, EXPIRATION_REASONS, PERIOD_TYPES, STORES } from "./common.js";
 
 const ms = z.int();
 /** Doubles may be serialised as integers (e.g. `"price": 0`). */
@@ -49,8 +49,9 @@ const lifecycle = {
   presented_offering_id: z.string().nullable(),
   transaction_id: z.string(),
   original_transaction_id: z.string(),
-  is_family_share: z.boolean(),
-  country_code: z.string(),
+  // Docs: "Always" = key present, value may be null. Real PROMOTIONAL events carry null here (T-064).
+  is_family_share: z.boolean().nullable(),
+  country_code: z.string().nullable(),
   store: z.enum(STORES).optional(),
   currency: z.string().nullable().optional(),
   price: double.nullable().optional(),
@@ -59,8 +60,8 @@ const lifecycle = {
   commission_percentage: double.nullable().optional(),
   takehome_percentage: double.nullable().optional(),
   offer_code: z.string().nullable().optional(),
-  renewal_number: z.int().optional(),
-  metadata: z.record(z.string(), z.unknown()).optional(),
+  renewal_number: z.int().nullable().optional(),
+  metadata: z.record(z.string(), z.unknown()).nullable().optional(),
   discount_percentage: double.nullable().optional(),
   discount_amount: double.nullable().optional(),
   discount_identifier: z.string().nullable().optional(),
@@ -137,6 +138,33 @@ export const WebhookEnvelopeSchema = z.looseObject({
   api_version: z.string(),
   event: EventSchema,
 });
+
+/**
+ * Any well-formed RevenueCat event, whatever its `type`. RevenueCat adds event types without bumping
+ * `api_version`, so receivers must accept these (T-065). Only the common + identity groups are required.
+ */
+export const UnknownEventSchema = z.looseObject({ type: z.string().min(1), ...common, ...identity });
+export const UnknownWebhookEnvelopeSchema = z.looseObject({ api_version: z.string(), event: UnknownEventSchema });
+export type UnknownEvent = z.infer<typeof UnknownEventSchema>;
+
+export type EnvelopeClassification =
+  | { kind: "known"; envelope: WebhookEnvelope }
+  | { kind: "unknown-type"; type: string; envelope: z.infer<typeof UnknownWebhookEnvelopeSchema> }
+  | { kind: "invalid"; issues: Array<{ path: string; message: string }> };
+
+/** Classify an incoming body: one of our 7 types, a well-formed event of another type, or invalid. */
+export function classifyEnvelope(body: unknown): EnvelopeClassification {
+  const known = WebhookEnvelopeSchema.safeParse(body);
+  if (known.success) return { kind: "known", envelope: known.data };
+  const loose = UnknownWebhookEnvelopeSchema.safeParse(body);
+  const typeIsOurs = loose.success && (EVENT_TYPES as readonly string[]).includes(loose.data.event.type);
+  if (loose.success && !typeIsOurs) return { kind: "unknown-type", type: loose.data.event.type, envelope: loose.data };
+  const source = loose.success ? known : loose;
+  return {
+    kind: "invalid",
+    issues: source.error.issues.map((i) => ({ path: i.path.join("."), message: i.message })),
+  };
+}
 
 export type Event = z.infer<typeof EventSchema>;
 export type WebhookEnvelope = z.infer<typeof WebhookEnvelopeSchema>;

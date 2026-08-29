@@ -5,7 +5,7 @@ import { RccError } from "../core/errors.js";
 import { assertUrl } from "../core/http.js";
 import { println, type Io } from "../core/io.js";
 import { bold, cyan, dim, green, red, yellow } from "../core/colors.js";
-import { WebhookEnvelopeSchema } from "../schemas/index.js";
+import { classifyEnvelope } from "../schemas/index.js";
 
 export const DEFAULT_PORT = 8787;
 
@@ -70,9 +70,9 @@ export async function startListener(opts: ListenOptions): Promise<Listener> {
       json(res, 400, { error: "Body is not valid JSON" });
       return;
     }
-    const result = WebhookEnvelopeSchema.safeParse(parsed);
-    if (!result.success) {
-      const issues = result.error.issues.map((i) => ({ path: i.path.length ? i.path.join(".") : "(root)", message: i.message }));
+    const classified = classifyEnvelope(parsed);
+    if (classified.kind === "invalid") {
+      const issues = classified.issues.map((i) => ({ path: i.path || "(root)", message: i.message }));
       const shown = issues.slice(0, 3).map((i) => `${i.path}: ${i.message}`).join("; ");
       const more = issues.length > 3 ? ` (+${issues.length - 3} more)` : "";
       log(`${time}  ${red(bold("INVALID"))}  ${shown}${more}  → 400`);
@@ -81,7 +81,11 @@ export async function startListener(opts: ListenOptions): Promise<Listener> {
       return;
     }
 
-    const ev = result.data.event;
+    const ev = classified.envelope.event;
+    const typeLabel =
+      classified.kind === "known"
+        ? cyan(bold(ev.type.padEnd(16)))
+        : `${yellow(bold("UNSUPPORTED"))} ${yellow(ev.type)}`;
     let status = 200;
     let suffix = "";
     if (opts.forward !== undefined) {
@@ -99,8 +103,9 @@ export async function startListener(opts: ListenOptions): Promise<Listener> {
       }
     }
     const statusText = status < 300 ? green(String(status)) : red(String(status));
-    log(`${time}  ${cyan(bold(ev.type.padEnd(16)))} ${yellow(ev.app_user_id)}  ${ev.product_id ?? ""}  → ${statusText}${suffix}`);
-    if (opts.verbose) log(dim(JSON.stringify(result.data, null, 2)));
+    const productId = typeof ev["product_id"] === "string" ? ev["product_id"] : "";
+    log(`${time}  ${typeLabel} ${yellow(ev.app_user_id)}  ${productId}  → ${statusText}${suffix}`);
+    if (opts.verbose) log(dim(JSON.stringify(classified.envelope, null, 2)));
     json(res, status, { ok: status < 300 });
   }
 

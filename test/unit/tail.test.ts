@@ -125,3 +125,16 @@ describe("T-061 rcc tail --smee", () => {
     await until(() => smee.subscribers === 0);
   });
 });
+
+describe("T-065 tail accepts unknown event types", () => {
+  it("prints UNSUPPORTED <TYPE> instead of INVALID", async () => {
+    const smee = await startFakeSmee();
+    open.push(smee);
+    const { out } = await tail(smee);
+    const body = JSON.parse(readFileSync(join(FIX, "real/NON_RENEWING_PURCHASE.promotional.json"), "utf8")) as Record<string, unknown>;
+    smee.emit({ body, timestamp: Date.now() });
+    await until(() => /NON_RENEWING_PURCHASE/.test(out.text));
+    expect(out.text).toMatch(/UNSUPPORTED\s+NON_RENEWING_PURCHASE/);
+    expect(out.text).not.toMatch(/INVALID/);
+  });
+});

@@ -6,7 +6,7 @@ import { join } from "node:path";
 import { RccError } from "../core/errors.js";
 import { println, type Io } from "../core/io.js";
 import { bold, cyan, dim, green, red, yellow } from "../core/colors.js";
-import { WebhookEnvelopeSchema } from "../schemas/index.js";
+import { classifyEnvelope } from "../schemas/index.js";
 
 export const DEFAULT_INBOX_PORT = 8788;
 const EVENTS_FILE = "events.jsonl";
@@ -23,6 +23,8 @@ export interface InboxRecord {
   issues?: Array<{ path: string; message: string }>;
   eventId?: string;
   eventType?: string;
+  /** Well-formed event whose `type` is not one of the 7 rcc generates (forward compatibility). */
+  unsupportedType?: boolean;
   duplicateOf?: number;
 }
 
@@ -195,16 +197,19 @@ export async function startInbox(opts: InboxOptions): Promise<Inbox> {
       status = 400;
       label = `${red(bold("INVALID"))}  body is not JSON`;
     } else {
-      const result = WebhookEnvelopeSchema.safeParse(parsed);
-      if (result.success) {
+      const classified = classifyEnvelope(parsed);
+      if (classified.kind !== "invalid") {
+        const ev = classified.envelope.event;
         rec.valid = true;
-        rec.eventId = result.data.event.id;
-        rec.eventType = result.data.event.type;
+        rec.eventId = ev.id;
+        rec.eventType = ev.type;
+        if (classified.kind === "unknown-type") rec.unsupportedType = true;
         const dup = store.findByEventId(rec.eventId);
         if (dup) rec.duplicateOf = dup.seq;
-        label = `${cyan(bold(rec.eventType.padEnd(16)))} ${yellow(result.data.event.app_user_id)}${dup ? dim(`  (retry of #${dup.seq})`) : ""}`;
+        const typeLabel = classified.kind === "known" ? cyan(bold(ev.type.padEnd(16))) : `${yellow(bold("UNSUPPORTED"))} ${yellow(ev.type)}`;
+        label = `${typeLabel} ${yellow(ev.app_user_id)}${dup ? dim(`  (retry of #${dup.seq})`) : ""}`;
       } else {
-        rec.issues = result.error.issues.map((i) => ({ path: i.path.join("."), message: i.message }));
+        rec.issues = classified.issues;
         label = `${red(bold("INVALID"))}  ${rec.issues.slice(0, 3).map((i) => `${i.path}: ${i.message}`).join("; ")}`;
       }
       status = authOk ? 200 : 401;

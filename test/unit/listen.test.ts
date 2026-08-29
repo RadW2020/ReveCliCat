@@ -96,3 +96,14 @@ describe("T-021 rcc listen", () => {
     await expect(startListener({ port: l.port, io: { stdout: new Collector(), stderr: new Collector() } })).rejects.toThrow(/in use/);
   });
 });
+
+describe("T-065 listen accepts unknown event types", () => {
+  it("logs UNSUPPORTED and answers 200; garbage still 400", async () => {
+    const { l, out } = await listener();
+    const body = readFileSync(join(FIX, "real/NON_RENEWING_PURCHASE.promotional.json"), "utf8");
+    expect((await post(l.url, body)).status).toBe(200);
+    expect(out.text).toMatch(/UNSUPPORTED\s+NON_RENEWING_PURCHASE/);
+    expect(out.text).toMatch(/rcc_promo_test/);
+    expect((await post(l.url, "{nope")).status).toBe(400);
+  });
+});
