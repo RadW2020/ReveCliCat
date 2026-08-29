@@ -141,3 +141,8 @@ Diary of work sessions. Newest at the bottom. Format: date · ticket · what was
 - Impl: `src/core/config.ts` (`ConfigSchema`, `loadConfig`, `resolveDefaults`, `packageRoot()` walks up to the `reveclicat` package.json so scenarios copy from src/, dist/ or node_modules), `src/commands/init.ts`, `send`/`run` resolve defaults; `--help` texts mention the config file. `LICENSE` (MIT), `CONTRIBUTING.md`, `CHANGELOG.md` cut as `0.1.0`.
 - Terminal: `rcc init` in an empty dir → 7 files + next command; second run → refuses with `--force` hint, exit 1.
 - Gates: typecheck ✓ · lint ✓ · tests 172/172 ✓.
+
+## 2026-08-29 · T-050 · README (English)
+- Tests first (4): non-affiliation disclaimer on the first non-empty line; required sections/placeholders (tagline, What/Why, 60-second quickstart, commands table, scenario format, CI, `<!-- TODO: demo GIF -->`, Authorization, State machine, License, `purr` alias); **bidirectional flag consistency** — every `--flag` in the README exists in `--help` and every `--help` flag is documented; all four commands and seven event types mentioned.
+- Wrote `README.md`: disclaimer, tagline, real `rcc run` output, What/Why, quickstart, commands table + examples, config precedence, annotated scenario format, CI section linking both examples, Authorization (plain static header, HMAC out of scope), state diagram, fidelity & scope, contributing, MIT.
+- Gates: typecheck ✓ · lint ✓ · tests 176/176 ✓.
